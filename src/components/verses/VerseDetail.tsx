@@ -10,12 +10,7 @@ interface VerseDetailProps {
     language: 'en' | 'ko' | 'zh' | 'es';
 }
 
-const BGM_TRACKS = [
-    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
-    // Add more BGM tracks here
-];
+
 
 export function VerseDetail({ verse, language }: VerseDetailProps) {
     const { isMemorized, toggleVerseMemorized } = useProgress(verse.seriesId);
@@ -28,19 +23,10 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
     const [loopCount, setLoopCount] = useState(0);
     const [targetLoops, setTargetLoops] = useState(1); // 1, 10, or infinity
     const [playbackRate, setPlaybackRate] = useState(1.0);
-    const [bgmEnabled, setBgmEnabled] = useState(false);
+    const [testMode, setTestMode] = useState(false);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const bgmRef = useRef<HTMLAudioElement | null>(null);
-
-    const playNextBgm = () => {
-        if (!bgmRef.current) return;
-        const randomIndex = Math.floor(Math.random() * BGM_TRACKS.length);
-        bgmRef.current.src = BGM_TRACKS[randomIndex];
-        bgmRef.current.volume = 0.2; // 20% volume
-        bgmRef.current.play().catch(e => console.error("BGM Play failed", e));
-    };
 
     // Cleanup URL on unmount
     useEffect(() => {
@@ -89,21 +75,14 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
 
         if (isPlaying) {
             audioRef.current.pause();
-            bgmRef.current?.pause();
-            setIsPlaying(false);
+            // setIsPlaying(false) handled by onPause
         } else {
             setLoopCount(0);
-            const playPromise = audioRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.error("Playback failed:", error);
-                    setIsPlaying(false); // Stop playing state on error
-                });
-            }
-            if (bgmEnabled) {
-                playNextBgm();
-            }
-            setIsPlaying(true);
+            audioRef.current.play().catch(error => {
+                console.error("Playback failed:", error);
+                setIsPlaying(false);
+            });
+            // setIsPlaying(true) handled by onPlay
         }
     };
     // ... (skip lines 80-180) -> wait I cannot skip lines in replacement content unless I use multi-replace.
@@ -122,8 +101,17 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
             audioRef.current?.play();
         } else {
             setIsPlaying(false);
-            bgmRef.current?.pause();
         }
+    };
+
+    const getMaskedText = (text: string) => {
+        return text.split(' ').map(word => {
+            if (word.length === 0) return word;
+            const firstChar = word.charAt(0);
+            // Replace rest with asterisk per user request
+            const masked = "*".repeat(word.length - 1);
+            return firstChar + masked;
+        }).join(' ');
     };
 
     const handleShare = async () => {
@@ -171,7 +159,7 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
                         Memorize This Verse
                     </div>
                     <h2 className="text-3xl md:text-5xl font-serif font-bold text-stone-900 leading-tight">
-                        {verse.text[language]}
+                        {testMode ? getMaskedText(verse.text[language]) : verse.text[language]}
                     </h2>
                     <p className="text-xl text-stone-500 mt-4 font-serif italic">
                         — {verse.reference[language]}
@@ -221,7 +209,7 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
                                         {isPlaying ? (
                                             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 9v6m4-6v6" /></svg>
                                         ) : (
-                                            <svg className="w-10 h-10 translate-x-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-10 h-10 translate-x-0" fill="currentColor" viewBox="0 0 24 24">
                                                 <path d="M8 5v14l11-7z" />
                                             </svg>
                                         )}
@@ -258,25 +246,17 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
                                     </div>
 
                                     <div className="flex flex-col items-center gap-2">
-                                        <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Music</label>
+                                        <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Test</label>
                                         <button
-                                            onClick={() => {
-                                                const newState = !bgmEnabled;
-                                                setBgmEnabled(newState);
-                                                if (newState && isPlaying) {
-                                                    playNextBgm();
-                                                } else if (!newState) {
-                                                    bgmRef.current?.pause();
-                                                }
-                                            }}
+                                            onClick={() => setTestMode(!testMode)}
                                             className={cn(
                                                 "h-12 px-6 rounded-xl border-2 font-bold text-base transition-all",
-                                                bgmEnabled
+                                                testMode
                                                     ? "bg-amber-100 border-amber-300 text-amber-800"
                                                     : "bg-white border-stone-200 text-stone-400 hover:border-amber-300"
                                             )}
                                         >
-                                            {bgmEnabled ? 'ON' : 'OFF'}
+                                            {testMode ? 'ON' : 'OFF'}
                                         </button>
                                     </div>
                                 </div>
@@ -339,13 +319,9 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
             <audio
                 ref={audioRef}
                 src={audioUrl || undefined}
+                onPlay={() => setIsPlaying(true)}
                 onEnded={handleEnded}
                 onPause={() => setIsPlaying(false)}
-                className="hidden"
-            />
-            <audio
-                ref={bgmRef}
-                onEnded={playNextBgm}
                 className="hidden"
             />
         </div>

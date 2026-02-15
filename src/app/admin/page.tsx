@@ -20,38 +20,116 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'subscriptions'>('overview');
 
     useEffect(() => {
-        if (!user) return;
+        // Check for custom admin cookie
+        const hasAdminCookie = document.cookie.split(';').some((item) => item.trim().startsWith('miracle_admin_token=true'));
 
-        // For development/demo, we'll allow access if authenticated, 
-        // OR restrict to specific emails if you prefer.
-        // if (!ADMIN_EMAILS.includes(user.email || "")) {
-        //     return; 
-        // }
+        if (!authLoading && !user && !hasAdminCookie) {
+            // Not logged in AND no cookie -> Access Denied
+            setLoading(false);
+            return;
+        }
+
+        // Security Check
+        const isEmailAllowed = user && ADMIN_EMAILS.includes(user.email || "");
+        if (!isEmailAllowed && !hasAdminCookie) {
+            setLoading(false);
+            return;
+        }
 
         const fetchData = async () => {
             try {
-                const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-                const usersData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt)
-                }));
-                setUsers(usersData);
-            } catch (error) {
+                // Try ordered query first (requires index)
+                try {
+                    const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
+                    const querySnapshot = await getDocs(q);
+                    const usersData = querySnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt)
+                    }));
+                    setUsers(usersData);
+                } catch (indexError: any) {
+                    // Fallback: Fetch all and sort client-side if index is missing
+                    console.warn("Index missing, falling back to client-side sort:", indexError);
+                    const q = query(collection(db, "users"));
+                    const querySnapshot = await getDocs(q);
+                    const usersData = querySnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt || Date.now())
+                    }));
+                    // Sort desc
+                    usersData.sort((a: any, b: any) => b.createdAt - a.createdAt);
+                    setUsers(usersData);
+                }
+            } catch (error: any) {
                 console.error("Error fetching users:", error);
+                if (error?.code === 'permission-denied') {
+                    console.warn("Firestore permission denied.");
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [user]);
+
+        // Safety timeout: If Firestore hangs (offline/issues), stop loading after 3s so user can see UI
+        const timer = setTimeout(() => {
+            setLoading((prev) => {
+                if (prev) {
+                    console.warn("Force releasing loading state.");
+                    return false;
+                }
+                return prev;
+            });
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, [user, authLoading]);
+
+    // Delete User Handler
+    const handleDeleteUser = async (userId: string) => {
+        if (!window.confirm("Are you sure you want to delete this user from the database? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            await import("firebase/firestore").then(({ deleteDoc, doc }) =>
+                deleteDoc(doc(db, "users", userId))
+            );
+            // Update local state
+            setUsers(prev => prev.filter(u => u.id !== userId));
+            alert("User data deleted from database.");
+        } catch (error: any) {
+            console.error("Error deleting user:", error);
+            alert("Failed to delete user: " + error.message);
+        }
+    };
 
     if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center">Loading Admin...</div>;
 
-    // Security fallback
-    // if (!user) return <div className="p-8">Access Denied</div>;
+    // Check auth again for render
+    const hasAdminCookie = typeof document !== 'undefined' && document.cookie.split(';').some((item) => item.trim().startsWith('miracle_admin_token=true'));
+    const isEmailAllowed = user && ADMIN_EMAILS.includes(user.email || "");
+
+    if (!isEmailAllowed && !hasAdminCookie) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center space-y-6">
+                <h1 className="text-2xl font-bold text-stone-800">Access Denied</h1>
+                <p className="text-stone-500">You do not have permission to view this page.</p>
+
+                <div className="flex gap-4">
+                    <Link href="/" className="text-stone-900 underline hover:text-stone-600">
+                        Return Home
+                    </Link>
+                    <Link href="/admin/login" className="bg-stone-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-stone-700 transition-colors">
+                        Admin Login
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     // --- Analytics Data Prep ---
     const totalUsers = users.length;
@@ -76,7 +154,7 @@ export default function AdminDashboard() {
 
     // CSV Export
     const downloadCSV = () => {
-        const headers = ["ID", "Email", "Name", "Date Joined", "Faith Stage", "Goal", "Is Premium", "Subscription ID"];
+        const headers = ["ID", "Email", "Name", "Date Joined", "Age", "Location", "Faith Stage", "Goal", "Is Premium", "Subscription ID"];
         const csvContent = [
             headers.join(","),
             ...users.map(u => [
@@ -84,6 +162,8 @@ export default function AdminDashboard() {
                 u.email || "",
                 u.name || "",
                 u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "",
+                u.survey?.age || "",
+                u.survey?.location || "",
                 u.survey?.faithStage || "",
                 u.survey?.goal || "",
                 u.isPremium ? "Yes" : "No",
@@ -225,6 +305,7 @@ export default function AdminDashboard() {
                                         <th className="p-4">Joined</th>
                                         <th className="p-4">Faith Stage</th>
                                         <th className="p-4">Status</th>
+                                        <th className="p-4">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-stone-100">
@@ -248,6 +329,17 @@ export default function AdminDashboard() {
                                                 ) : (
                                                     <span className="px-2 py-1 bg-stone-100 text-stone-500 rounded text-xs font-bold">Free</span>
                                                 )}
+                                            </td>
+                                            <td className="p-4">
+                                                <button
+                                                    onClick={() => handleDeleteUser(u.id)}
+                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                                    title="Delete User Data"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}

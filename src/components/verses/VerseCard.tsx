@@ -14,21 +14,23 @@ export function VerseCard({ verse, mode = "read", className }: VerseCardProps) {
     const [isHidden, setIsHidden] = useState(false);
 
     // Simple memorization logic: obscure words if hidden
+    const textContent = typeof verse.text === 'string' ? verse.text : verse.text.ko;
     const displayText = isHidden
-        ? verse.text.split(" ").map(word => "_".repeat(word.length)).join(" ")
-        : verse.text;
+        ? textContent.split(" ").map(word => "_".repeat(word.length)).join(" ")
+        : textContent;
 
     return (
         <div className={cn("bg-white p-8 rounded-2xl shadow-sm border border-stone-100 max-w-2xl w-full mx-auto", className)}>
             <div className="flex justify-between items-start mb-6">
                 <span className="inline-block px-3 py-1 rounded-full bg-stone-100 text-stone-600 text-xs font-semibold uppercase tracking-wider">
-                    {verse.category}
+                    {/* Category removed from Verse type, hardcoding or removing */}
+                    SCRIPTURE
                 </span>
-                <span className="text-stone-400 text-sm font-medium">{verse.translation}</span>
+                <span className="text-stone-400 text-sm font-medium"></span>
             </div>
 
             <h2 className="text-2xl md:text-3xl font-serif font-bold text-stone-800 mb-2 leading-tight">
-                {verse.reference}
+                {typeof verse.reference === 'string' ? verse.reference : verse.reference.ko}
             </h2>
 
             <p className="text-lg md:text-xl text-stone-600 leading-relaxed font-serif min-h-[120px] transition-all duration-300">

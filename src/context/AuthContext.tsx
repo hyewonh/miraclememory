@@ -11,7 +11,8 @@ import {
     signInWithEmailAndPassword,
     updateProfile
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 interface AuthContextType {
     user: User | null;
@@ -47,7 +48,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signInWithGoogle = async () => {
         try {
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
+            const result = await signInWithPopup(auth, provider);
+
+            // Create/Merge Firestore User Document
+            try {
+                // Ensure user doc exists. merge: true avoids overwriting existing data.
+                await setDoc(doc(db, "users", result.user.uid), {
+                    email: result.user.email,
+                    name: result.user.displayName,
+                    lastLogin: new Date().toISOString()
+                }, { merge: true });
+            } catch (e) {
+                console.error("Error updating Google user in Firestore:", e);
+            }
         } catch (error: any) {
             console.error("Error signing in with Google:", error);
             throw error;
@@ -69,8 +82,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await updateProfile(userCredential.user, {
                 displayName: name
             });
-            // Force reload user to get display name? Or just let onAuthStateChanged handle it (it might not have display name execution immediately)
-            // It's safer to not rely on immediate display name update in the user object for the very first render, but it should be fine.
+
+            // Create Firestore User Document
+            try {
+                await setDoc(doc(db, "users", userCredential.user.uid), {
+                    email: email,
+                    name: name,
+                    createdAt: new Date().toISOString(),
+                    isPremium: false,
+                    survey: {}
+                });
+            } catch (dbError) {
+                console.error("Error creating user profile in Firestore:", dbError);
+                // We don't throw here, because the Auth account was created successfully.
+                // We might want to try again later or log it.
+            }
         } catch (error: any) {
             console.error("Error signing up:", error);
             throw error;

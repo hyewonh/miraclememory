@@ -10,7 +10,7 @@
       "emailPassword": true,
       "googleSignIn": {
         "oAuthBrandDisplayName": "Kingdom Memory",
-        "supportEmail": "support@elimcenter.org"
+        "supportEmail": "admin@elimcenter.org"
       }
     }
   }

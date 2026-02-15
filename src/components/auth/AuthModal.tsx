@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
-interface AuthModalProps {
+export interface AuthModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSwitchToOnboarding?: () => void;
 }
 
-export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-    const [isSignUp, setIsSignUp] = useState(true); // Default to Sign Up as requested
+export function AuthModal({ isOpen, onClose, onSwitchToOnboarding }: AuthModalProps) {
+    const [isSignUp, setIsSignUp] = useState(false); // Default to Sign In
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
@@ -177,10 +178,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             <>
                                 Don't have an account?{" "}
                                 <button
-                                    onClick={() => setIsSignUp(true)}
+                                    onClick={() => {
+                                        if (onSwitchToOnboarding) {
+                                            onSwitchToOnboarding();
+                                        } else {
+                                            setIsSignUp(true);
+                                        }
+                                    }}
                                     className="font-bold text-stone-900 hover:underline"
                                 >
-                                    Sign up
+                                    Create one
                                 </button>
                             </>
                         )}

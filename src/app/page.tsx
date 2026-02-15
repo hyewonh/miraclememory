@@ -7,7 +7,6 @@ import { Pricing } from "@/components/pricing/Pricing";
 import { getDailyVerse } from "@/services/verseService";
 import { useEffect, useState } from "react";
 import { Verse } from "@/types";
-import { Seeder } from "@/components/admin/Seeder";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { OnboardingModal } from "@/components/auth/OnboardingModal";
 import { INITIAL_SERIES } from "@/data/seedData";
@@ -81,6 +80,10 @@ export default function Home() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        onSwitchToOnboarding={() => {
+          setIsAuthModalOpen(false);
+          setIsOnboardingOpen(true);
+        }}
       />
 
       {/* Onboarding Modal (Trial Flow) */}
@@ -131,7 +134,6 @@ export default function Home() {
       </main>
 
       <Pricing />
-      <Seeder />
 
       {/* Footer */}
       <footer className="w-full py-12 text-center text-sm text-stone-500 border-t border-stone-100 bg-[#fcf9f2]">

@@ -7,15 +7,14 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
 // Replace with your actual Plan ID from PayPal Developer Dashboard
-const PLAN_ID = "P-3N9395171L295964MM7ZL5YQ"; // Placeholder, user might need to provide this.
-
 interface PayPalSubscriptionProps {
-    onSuccess: () => void;
+    planId: string;
+    onSuccess: (subscriptionID: string) => void;
 }
 
-export function PayPalSubscription({ onSuccess }: PayPalSubscriptionProps) {
+export function PayPalSubscription({ planId, onSuccess }: PayPalSubscriptionProps) {
     const { user } = useAuth();
-    const [{ options, isPending }, dispatch] = usePayPalScriptReducer();
+    const [{ options, isPending, isRejected }, dispatch] = usePayPalScriptReducer();
 
     useEffect(() => {
         dispatch({
@@ -27,41 +26,69 @@ export function PayPalSubscription({ onSuccess }: PayPalSubscriptionProps) {
                 clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ""
             },
         } as any);
-    }, [dispatch]); // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dispatch]);
 
     if (!user) return null;
 
-    return (
-        <div className="w-full max-w-md mx-auto">
-            {isPending && <div className="spinner" />}
-            <PayPalButtons
-                style={{
-                    shape: "rect",
-                    color: "gold",
-                    layout: "vertical",
-                    label: "subscribe"
-                }}
-                createSubscription={(data, actions) => {
-                    return actions.subscription.create({
-                        plan_id: PLAN_ID
-                    });
-                }}
-                onApprove={async (data, actions) => {
-                    // Capture subscription details
-                    console.log("Subscription approved:", data);
+    if (!process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID) {
+        return (
+            <div className="text-center p-4 text-red-500 bg-red-50 rounded-xl border border-red-100">
+                <p className="font-bold text-sm">PayPal Configuration Error</p>
+                <p className="text-xs mt-1">Missing Client ID in environment variables.</p>
+            </div>
+        );
+    }
 
-                    if (data.subscriptionID) {
-                        // Update user profile
-                        await updateDoc(doc(db, "users", user.uid), {
-                            isPremium: true,
-                            subscriptionStatus: 'active',
-                            subscriptionId: data.subscriptionID,
-                            trialStartDate: new Date()
+    if (isRejected) {
+        return (
+            <div className="text-center p-4 text-red-500 bg-red-50 rounded-xl border border-red-100">
+                <p className="font-bold text-sm">Failed to load PayPal</p>
+                <p className="text-xs mt-1">Please refresh the page and try again.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full max-w-md mx-auto relative min-h-[120px]">
+            {isPending && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10 space-y-2">
+                    <div className="w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-xs text-stone-500 font-medium">Loading...</span>
+                </div>
+            )}
+
+            <div className="scale-95 origin-top">
+                <PayPalButtons
+                    style={{
+                        shape: "rect",
+                        color: "gold",
+                        layout: "vertical",
+                        label: "subscribe"
+                    }}
+                    createSubscription={(data, actions) => {
+                        return actions.subscription.create({
+                            plan_id: planId
                         });
-                        onSuccess();
-                    }
-                }}
-            />
+                    }}
+                    onApprove={async (data, actions) => {
+                        console.log("Subscription approved:", data);
+                        if (data.subscriptionID) {
+                            await updateDoc(doc(db, "users", user.uid), {
+                                isPremium: true,
+                                subscriptionStatus: 'active',
+                                subscriptionId: data.subscriptionID,
+                                trialStartDate: new Date()
+                            });
+                            onSuccess(data.subscriptionID);
+                        }
+                    }}
+                    onError={(err) => {
+                        console.error("PayPal Error:", err);
+                        alert("Payment failed / Canceled. Please try again.");
+                    }}
+                />
+            </div>
         </div>
     );
 }
+

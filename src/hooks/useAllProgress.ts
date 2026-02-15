@@ -44,9 +44,12 @@ export function useAllProgress() {
                 const data = doc.data() as SeriesProgress; // This matches the shape from useProgress
 
                 // Handle legacy migration logic same as useProgress
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const legacyData = data as any;
                 let completedVerses = data.completedVerses || {};
-                if (data.completedVerseIds && Array.isArray(data.completedVerseIds) && !data.completedVerses) {
-                    completedVerses = { en: data.completedVerseIds };
+
+                if (legacyData.completedVerseIds && Array.isArray(legacyData.completedVerseIds) && !data.completedVerses) {
+                    completedVerses = { en: legacyData.completedVerseIds };
                 }
 
                 // Aggregate counts

@@ -38,7 +38,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-6">
                         <div className="w-24 h-24 rounded-full bg-stone-100 overflow-hidden border-4 border-white shadow-lg">
                             {user.photoURL ? (
-                                <img src={user.photoURL} alt={user.displayName} className="w-full h-full object-cover" />
+                                <img src={user.photoURL || undefined} alt={user.displayName || 'User'} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-4xl text-stone-300">
                                     {user.displayName?.[0] || '?'}
