@@ -32,6 +32,7 @@ export interface UserProfile {
     photoURL?: string;
     isPremium: boolean;
     subscriptionStatus: 'active' | 'trial' | 'expired' | 'none';
+    subscriptionId?: string;
     trialStartDate?: Date;
     streak: number;
     lastPracticeDate: Date | null;

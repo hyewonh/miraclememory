@@ -19,9 +19,16 @@ export function useProfile() {
         }
 
         const docRef = doc(db, "users", user.uid);
-        const unsubscribe = onSnapshot(docRef, (doc) => {
-            if (doc.exists()) {
-                setProfile(doc.data() as UserProfile);
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                // Convert Firestore Timestamp to JS Date
+                const profileData = {
+                    ...data,
+                    trialStartDate: data.trialStartDate?.toDate ? data.trialStartDate.toDate() : data.trialStartDate,
+                    lastPracticeDate: data.lastPracticeDate?.toDate ? data.lastPracticeDate.toDate() : data.lastPracticeDate,
+                } as UserProfile;
+                setProfile(profileData);
             } else {
                 setProfile(null);
             }

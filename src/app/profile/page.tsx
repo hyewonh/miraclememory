@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { UI_TEXT } from "@/data/translations";
 import { useLanguage } from "@/context/LanguageContext";
+import { SubscriptionManager } from "@/components/profile/SubscriptionManager";
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth();
@@ -88,6 +89,9 @@ export default function ProfilePage() {
 
                 {/* Header */}
                 <ProfileHeader />
+
+                {/* Subscription Management */}
+                {profile && <SubscriptionManager profile={profile} />}
 
                 {/* Stats */}
                 <OverallStats allProgress={allProgress} profile={profile} />
