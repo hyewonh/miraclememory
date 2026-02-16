@@ -24,9 +24,28 @@ export function Hero({ onStartTrial, language = 'en' }: HeroProps) {
                 <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/40" />
             </div>
 
-            <div className="relative z-10 max-w-4xl mx-auto px-6 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <div className="relative z-10 max-w-4xl mx-auto px-6 flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
 
-                <div className="space-y-6">
+                {/* Primary CTA - Top & Center */}
+                <div className="mb-8 w-full max-w-sm mx-auto">
+                    {!user ? (
+                        <button
+                            onClick={onStartTrial}
+                            className="w-full py-5 bg-stone-900 hover:bg-stone-800 text-white rounded-full font-bold text-xl shadow-xl transition-all hover:-translate-y-1"
+                        >
+                            {t.cta[language]}
+                        </button>
+                    ) : (
+                        <Link
+                            href="#series"
+                            className="block w-full py-5 bg-stone-800 text-white hover:bg-stone-700 rounded-full font-bold text-xl shadow-xl transition-all"
+                        >
+                            Continue Journey
+                        </Link>
+                    )}
+                </div>
+
+                <div className="space-y-6 mb-12">
                     <h1 className="text-5xl md:text-7xl font-serif font-black text-stone-900 leading-tight drop-shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 tracking-tight whitespace-pre-line">
                         {t.title[language]}
                     </h1>
@@ -36,26 +55,8 @@ export function Hero({ onStartTrial, language = 'en' }: HeroProps) {
                     </p>
                 </div>
 
-                {/* Spacer / Visual Balance */}
-                <div className="h-12 md:h-24"></div>
-
-                <div className="pt-4 flex flex-col gap-4">
-                    {!user ? (
-                        <button
-                            onClick={onStartTrial}
-                            className="w-full py-4 bg-[#e8cd98] hover:bg-[#dec186] text-stone-900 rounded-full font-semibold text-lg shadow-lg shadow-orange-100/50 transition-all hover:-translate-y-1"
-                        >
-                            {t.cta[language]}
-                        </button>
-                    ) : (
-                        <Link
-                            href="#series"
-                            className="w-full py-4 bg-stone-800 text-white hover:bg-stone-700 rounded-full font-semibold text-lg shadow-xl transition-all"
-                        >
-                            Continue Journey
-                        </Link>
-                    )}
-
+                {/* Secondary Actions */}
+                <div className="pt-4">
                     <Link href="#pricing" className="text-stone-400 hover:text-stone-600 text-sm font-medium transition-colors">
                         Support the Ministry
                     </Link>

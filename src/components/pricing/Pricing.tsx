@@ -8,11 +8,11 @@ export function Pricing() {
     const { user, signInWithGoogle } = useAuth();
     const [subscribed, setSubscribed] = useState(false);
 
-    // PRE-DEFINED PLAN ID (Start with Trial + $4.99)
-    const PLAN_ID = "P-93K30107FK2437318NGIP2VQ";
+    // PRE-DEFINED PLAN ID (Start with Trial + $7.99)
+    const PLAN_ID = "P-3EK676302W2441939NGJJGCQ";
 
     return (
-        <section className="py-24 bg-stone-50" id="pricing">
+        <section className="w-full py-24 bg-stone-50" id="pricing">
             <div className="max-w-4xl mx-auto px-6 text-center">
                 <h2 className="text-3xl md:text-4xl font-serif font-bold text-stone-800 mb-4">
                     Support the Ministry

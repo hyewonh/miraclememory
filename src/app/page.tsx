@@ -44,6 +44,7 @@ export default function Home() {
       <OnboardingModal
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
+        startAtPayment={!!user}
       />
 
       {/* Main Content */}

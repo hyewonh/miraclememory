@@ -51,9 +51,12 @@ export function SeriesProgressCard({ series, progress }: SeriesProgressCardProps
 
                 {/* Content */}
                 <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="text-lg font-serif font-bold text-stone-900 mb-1 group-hover:text-primary transition-colors">
+                    <h3 className="text-lg font-serif font-bold text-stone-900 mb-2 group-hover:text-amber-600 transition-colors">
                         {series.title[language]}
                     </h3>
+                    <p className="text-sm text-stone-500 line-clamp-2 mb-4">
+                        {series.description[language]}
+                    </p>
 
                     <div className="mt-auto pt-4 space-y-2">
                         <div className="flex justify-between text-xs font-medium text-stone-500">

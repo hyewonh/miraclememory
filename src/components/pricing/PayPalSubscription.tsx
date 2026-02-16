@@ -16,17 +16,7 @@ export function PayPalSubscription({ planId, onSuccess }: PayPalSubscriptionProp
     const { user } = useAuth();
     const [{ options, isPending, isRejected }, dispatch] = usePayPalScriptReducer();
 
-    useEffect(() => {
-        dispatch({
-            type: "resetOptions",
-            value: {
-                ...options,
-                intent: "subscription",
-                vault: true,
-                clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ""
-            },
-        } as any);
-    }, [dispatch]);
+
 
     if (!user) return null;
 

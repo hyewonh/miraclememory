@@ -90,19 +90,20 @@ export default function SeriesPage() {
             <OnboardingModal
                 isOpen={isOnboardingOpen}
                 onClose={() => setIsOnboardingOpen(false)}
+                startAtPayment={!!user}
             />
 
             {/* Navbar */}
             <Navbar className="bg-white border-b border-stone-100" />
 
             {/* Header */}
-            <div className="bg-stone-900 text-white py-10 md:py-20 px-6 relative overflow-hidden">
+            <div className="bg-stone-900 text-white py-8 md:py-12 px-6 relative overflow-hidden">
                 <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">{series.title[language]}</h1>
-                    <p className="text-lg md:text-xl text-stone-400 font-serif max-w-2xl mx-auto mb-6">{series.description[language]}</p>
+                    <h1 className="text-2xl md:text-3xl font-serif font-bold mb-4">{series.title[language]}</h1>
+                    <p className="text-lg md:text-lg text-stone-400 font-serif max-w-2xl mx-auto mb-6">{series.description[language]}</p>
 
                     {/* Progress Bar */}
-                    <div className="max-w-md mx-auto">
+                    <div className="max-w-md mx-auto mb-8 md:mb-12">
                         <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">
                             <span>Progress</span>
                             <span>{progressPercentage}% ({completedCount}/{totalVerses})</span>
@@ -125,7 +126,7 @@ export default function SeriesPage() {
                 <div className="absolute inset-0 opacity-10 bg-[url('/noise.png')] mix-blend-overlay pointer-events-none" />
             </div>
 
-            <main className="max-w-6xl mx-auto px-4 -mt-10 mb-24 relative z-10">
+            <main className="max-w-6xl mx-auto px-4 -mt-20 mb-24 relative z-10">
                 {/* Featured Verse Card (Top) */}
                 {activeVerse && (
                     <div className="mb-16">

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 interface OnboardingModalProps {
     isOpen: boolean;
     onClose: () => void;
+    startAtPayment?: boolean;
 }
 
 const STEPS = {
@@ -30,14 +31,25 @@ const STEPS = {
 // Follow the guide in `paypal_setup.md`
 // ---------------------------------------------------------
 const PAYPAL_PLANS = {
-    MONTHLY: "P-6UL08083JU423060JNGJD42Y",
-    YEARLY: "P-09M79243P5266745NNGJEA3Q"
+    MONTHLY: "P-3EK676302W2441939NGJJGCQ",
+    YEARLY: "P-2KU86670VG943341SNGJJIAY"
 };
 
-export function OnboardingModal({ isOpen, onClose }: OnboardingModalProps) {
+export function OnboardingModal({ isOpen, onClose, startAtPayment = false }: OnboardingModalProps) {
     const [step, setStep] = useState(STEPS.INTRO);
     const { user, signUpWithEmail, signInWithEmail, signInWithGoogle } = useAuth();
     const [surveyData, setSurveyData] = useState<any>({});
+
+    // Reset step when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            if (startAtPayment) {
+                setStep(STEPS.PAYMENT);
+            } else {
+                setStep(STEPS.INTRO);
+            }
+        }
+    }, [isOpen, startAtPayment]);
 
     // Prevent closing if in critical steps
     const handleBackdropClick = (e: React.MouseEvent) => {

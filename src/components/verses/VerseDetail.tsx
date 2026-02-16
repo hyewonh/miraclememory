@@ -173,7 +173,7 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
     }, [playbackRate]);
 
     return (
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-stone-200 max-w-4xl mx-auto my-8 relative">
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-stone-200/60 max-w-4xl mx-auto my-8 relative">
             {/* Memorized Badge (Visual only if memorized) */}
             {memorized && (
                 <div className="absolute top-6 right-6 z-10 animate-in fade-in zoom-in duration-500">

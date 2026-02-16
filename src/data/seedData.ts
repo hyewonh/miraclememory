@@ -62,7 +62,7 @@ export const INITIAL_SERIES: Series[] = [
             es: "Romanos Núcleo 30"
         },
         description: {
-            en: "Master the logic of salvation through 30 key verses from Romans.",
+            en: "Master of salvation through 30 key verses from Romans.",
             ko: "구원의 논리를 로마서 30구절로 마스터하세요.",
             zh: "通过罗马书30句关键经文掌握救恩的逻辑。",
             es: "Domina la lógica de la salvación a través de 30 versículos clave de Romanos."
