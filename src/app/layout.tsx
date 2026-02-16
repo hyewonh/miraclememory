@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, Playfair_Display } from "next/font/google";
+import { Outfit, Playfair_Display, Libre_Baskerville } from "next/font/google";
 import { Providers } from "@/components/providers/Providers";
 import "./globals.css";
 
@@ -10,6 +10,12 @@ const outfit = Outfit({
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
+  subsets: ["latin"],
+});
+
+const libre = Libre_Baskerville({
+  variable: "--font-libre",
+  weight: ["400", "700"],
   subsets: ["latin"],
 });
 
@@ -26,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${outfit.variable} ${playfair.variable} antialiased bg-background text-foreground`}
+        className={`${outfit.variable} ${playfair.variable} ${libre.variable} antialiased bg-background text-foreground`}
       >
         <Providers>
           {children}

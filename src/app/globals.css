@@ -85,6 +85,7 @@
 
   --font-sans: var(--font-outfit);
   --font-serif: var(--font-playfair);
+  --font-reading: var(--font-libre);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -4,20 +4,34 @@ import { Verse } from "@/types";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/hooks/useProgress";
+import html2canvas from "html2canvas";
+import { format } from "date-fns";
+import { VerseShareCard } from "./VerseShareCard";
+import { db, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, getDoc, setDoc, addDoc, collection } from "firebase/firestore";
+
+import { useAuth } from "@/context/AuthContext";
 
 interface VerseDetailProps {
     verse: Verse;
     language: 'en' | 'ko' | 'zh' | 'es';
     onRestrictedAction?: () => void;
+    onLoginRequired?: () => void;
 }
 
-export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetailProps) {
+export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequired }: VerseDetailProps) {
+    const { user } = useAuth();
     const { isMemorized, toggleVerseMemorized } = useProgress(verse.seriesId);
     // ... existing code ...
 
     const handleRecordClick = () => {
         if (onRestrictedAction) {
             onRestrictedAction();
+            return;
+        }
+        if (!user && onLoginRequired) {
+            onLoginRequired();
             return;
         }
         if (isRecording) {
@@ -30,6 +44,10 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
     const handleMemorizeClick = () => {
         if (onRestrictedAction) {
             onRestrictedAction();
+            return;
+        }
+        if (!user && onLoginRequired) {
+            onLoginRequired();
             return;
         }
         toggleVerseMemorized(verse.id);
@@ -47,19 +65,80 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const shareCardRef = useRef<HTMLDivElement>(null);
+    const [shareTheme, setShareTheme] = useState<string>("");
 
-    // Cleanup URL on unmount
+    const PASTEL_THEMES = [
+        "linear-gradient(135deg, #fcf9f2 0%, #f5f0e1 100%)", // Beige
+        "linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)", // Pink
+        "linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)", // Yellow
+        "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)", // Green
+        "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)", // Blue
+        "linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)", // Purple
+    ];
+
+    useEffect(() => {
+        // Set random theme on mount
+        const randomTheme = PASTEL_THEMES[Math.floor(Math.random() * PASTEL_THEMES.length)];
+        setShareTheme(randomTheme);
+    }, []);
+    const [isSharing, setIsSharing] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+
+    // Share Modal State
+    const [showPreview, setShowPreview] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
+
+    // Cleanup URL on unmount or verse change
     useEffect(() => {
         return () => {
             if (audioUrl) URL.revokeObjectURL(audioUrl);
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
         };
-    }, [audioUrl]);
+    }, [audioUrl, previewUrl]);
+
+    // Load existing recording and reset state on verse change
+    useEffect(() => {
+        // Reset state first
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+        setAudioBlob(null);
+        setAudioUrl(null);
+        setIsPlaying(false);
+        setLoopCount(0);
+
+        // Load existing recording if user is logged in
+        if (user && verse.id) {
+            const loadRecording = async () => {
+                try {
+                    // Path: users/{uid}/recordings/{verseId} (Document holding the URL)
+                    // Or easier: check valid storage path? Accessing Firestore is faster/cheaper for existence check.
+                    // Let's store metadata in Firestore: users/{uid}/recordings/{verseId} -> { url, createdAt }
+                    const docRef = doc(db, "users", user.uid, "recordings", verse.id);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.url) {
+                            setAudioUrl(data.url);
+                            // We don't have the blob, but we have the URL which is enough for <audio>
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error loading recording:", err);
+                }
+            };
+            loadRecording();
+        }
+    }, [verse.id, user]);
 
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            // Use browser default MIME type for best compatibility
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
 
@@ -68,17 +147,54 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
                 if (e.data.size > 0) chunks.push(e.data);
             };
 
-            mediaRecorder.onstop = () => {
-                // Use the recorder's actual mime type
+            mediaRecorder.onstop = async () => {
                 const mimeType = mediaRecorder.mimeType || "audio/webm";
                 const blob = new Blob(chunks, { type: mimeType });
                 setAudioBlob(blob);
-                const url = URL.createObjectURL(blob);
-                setAudioUrl(url);
+                const localUrl = URL.createObjectURL(blob);
+                setAudioUrl(localUrl);
+
+                // Auto-save to Firebase
+                if (user) {
+                    setIsUploading(true);
+                    try {
+                        const fileExt = mimeType.includes("mp4") ? "m4a" : "webm"; // Basic deduction
+                        const storageRef = ref(storage, `recordings/${user.uid}/${verse.id}.${fileExt}`);
+
+                        await uploadBytes(storageRef, blob);
+                        const downloadUrl = await getDownloadURL(storageRef);
+
+                        // Save metadata to Firestore
+                        await setDoc(doc(db, "users", user.uid, "recordings", verse.id), {
+                            url: downloadUrl,
+                            verseId: verse.id,
+                            seriesId: verse.seriesId,
+                            createdAt: new Date().toISOString(),
+                            mimeType: mimeType
+                        });
+                        console.log("Recording saved successfully:", downloadUrl);
+                        // Update audioUrl to the remote one? No, keep local for immediate playback speed, 
+                        // but maybe update it silently or on next load. Local blob is fine for now.
+                    } catch (uploadErr) {
+                        console.error("Error uploading recording:", uploadErr);
+                        alert("Failed to save recording. Please check your connection.");
+                    } finally {
+                        setIsUploading(false);
+                    }
+                }
             };
 
             mediaRecorder.start();
             setIsRecording(true);
+
+            // AUTO-STOP after 2 minutes (120,000 ms)
+            setTimeout(() => {
+                if (mediaRecorder.state === "recording") {
+                    mediaRecorder.stop();
+                    alert("Maximum recording duration (2 minutes) reached.");
+                }
+            }, 120000);
+
         } catch (err) {
             console.error("Error accessing microphone:", err);
             alert("Microphone access denied.");
@@ -147,22 +263,129 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
     };
 
     const handleShare = async () => {
+        if (!shareCardRef.current) return;
+        setIsSharing(true);
+
+        try {
+            // Generate a random theme if not set (though effect handles it, good for refresh)
+            const currentTheme = shareTheme || PASTEL_THEMES[Math.floor(Math.random() * PASTEL_THEMES.length)];
+            if (!shareTheme) setShareTheme(currentTheme);
+
+            // Wait a tick for render if we just set it? React batches, but shareCardRef is ref.
+            // Actually, if we update state, we need to wait for re-render before capturing.
+            // For now, assume state is set on mount.
+
+            // 1. Generate canvas ONCE
+            const canvas = await html2canvas(shareCardRef.current, {
+                scale: 2,
+                backgroundColor: null,
+                useCORS: true,
+                logging: false,
+            });
+
+            // 2. Prepare Data URL (for Preview & Download Link)
+            const dataUrl = canvas.toDataURL("image/png");
+            setPreviewUrl(dataUrl);
+
+            // 3. Prepare Blob (for System Share & Firebase Upload)
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    setIsSharing(false);
+                    alert("Failed to generate image.");
+                    return;
+                }
+                setPreviewBlob(blob);
+                setShowPreview(true);
+                setIsSharing(false);
+            }, 'image/png');
+
+        } catch (err) {
+            console.error("Share generation failed:", err);
+            setIsSharing(false);
+            alert("Could not generate image. Please try again.");
+        }
+    };
+
+    const saveToHistory = async (blob: Blob) => {
+        if (!user) return;
+
+        // Don't block UI with this async operation
+        try {
+            const timestamp = Date.now();
+            const fileName = `users/${user.uid}/shares/${timestamp}_${verse.id}.png`;
+            const storageRef = ref(storage, fileName);
+
+            // Upload
+            const snapshot = await uploadBytes(storageRef, blob);
+            const downloadUrl = await getDownloadURL(snapshot.ref);
+
+            // Save metadata
+            await addDoc(collection(db, "users", user.uid, "shared_images"), {
+                url: downloadUrl,
+                verseId: verse.id,
+                seriesId: verse.seriesId,
+                reference: verse.reference[language],
+                createdAt: new Date().toISOString(),
+                language: language,
+                theme: shareTheme // Save theme used
+            });
+            console.log("Image saved to history");
+        } catch (error) {
+            console.error("Error saving to history:", error);
+        }
+    };
+
+    const getSafeFilename = () => {
+        try {
+            const dateStr = format(new Date(), 'yyyy-MM-dd');
+            return `miracle-memory-${dateStr}.png`;
+        } catch (e) {
+            return `miracle-memory-${Date.now()}.png`;
+        }
+    };
+
+    const performSystemShare = async () => {
+        if (!previewBlob) {
+            alert("Image not ready to share.");
+            return;
+        }
+
+        saveToHistory(previewBlob).catch(err => console.error("Background save failed:", err));
+
+        const filename = getSafeFilename();
+        const file = new File([previewBlob], filename, { type: "image/png" });
+
+        // ONLY share the file. Adding text/title often causes apps (Telegram/WhatsApp) 
+        // to share the text and ignore the file.
         const shareData = {
-            title: 'Miracle Memory',
-            text: `I just memorized ${verse.reference[language]} on Miracle Memory! "${verse.text[language]}"`,
-            url: window.location.href
+            files: [file]
         };
 
-        if (navigator.share) {
+        if (navigator.canShare && navigator.canShare(shareData)) {
             try {
                 await navigator.share(shareData);
-            } catch (err) {
-                console.log('Error sharing:', err);
+            } catch (err: any) {
+                console.warn('Share API failed:', err);
+                if (err.name !== 'AbortError') {
+                    // Fallback to Clipboard
+                    try {
+                        const clipboardItem = new ClipboardItem({ "image/png": previewBlob });
+                        await navigator.clipboard.write([clipboardItem]);
+                        alert("Sharing failed. Image copied to clipboard!");
+                    } catch (clipboardErr) {
+                        alert("Sharing failed. Please use the 'Save' button.");
+                    }
+                }
             }
         } else {
-            // Fallback to clipboard
-            navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-            alert("Copied to clipboard!");
+            // Fallback to Clipboard
+            try {
+                const clipboardItem = new ClipboardItem({ "image/png": previewBlob });
+                await navigator.clipboard.write([clipboardItem]);
+                alert("Image copied to clipboard!");
+            } catch (clipboardErr) {
+                alert("Device doesn't support sharing. Use Save.");
+            }
         }
     };
 
@@ -190,10 +413,10 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
                     <div className="text-sm font-bold tracking-widest text-primary uppercase mb-2">
                         Memorize This Verse
                     </div>
-                    <div className="text-xl md:text-2xl font-serif font-bold text-stone-900 leading-relaxed min-h-[4rem] flex flex-wrap justify-center items-center">
+                    <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed min-h-[4rem] flex flex-wrap justify-center items-center">
                         {testMode ? getMaskedText(verse.text[language]) : verse.text[language]}
                     </div>
-                    <p className="text-base text-stone-500 mt-4 font-serif italic">
+                    <p className="text-lg text-rose-900 mt-4 font-serif italic font-medium">
                         — {verse.reference[language]}
                     </p>
                 </div>
@@ -295,8 +518,17 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
                             </div>
                         )}
 
-                        <div className="text-xs text-stone-400">
-                            {isRecording ? "Listening..." : "Tap mic to record your voice"}
+                        <div className="text-xs text-stone-400 flex items-center justify-center gap-2">
+                            {isRecording ? (
+                                <span className="text-red-500 font-medium animate-pulse">Recording (Max 2m)...</span>
+                            ) : isUploading ? (
+                                <span className="text-amber-600 font-medium flex items-center gap-1">
+                                    <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    Saving...
+                                </span>
+                            ) : (
+                                "Tap mic to record your voice"
+                            )}
                         </div>
                     </div>
                 </div>
@@ -329,22 +561,18 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
 
                     <button
                         onClick={handleShare}
-                        className="p-3 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
+                        disabled={isSharing}
+                        className="p-3 rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors disabled:opacity-50"
                         title="Share this verse"
                     >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                        {isSharing ? (
+                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        ) : (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                        )}
                     </button>
 
-                    {/* Telegram Share Button specific */}
-                    <a
-                        href={`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(`I memorized ${verse.reference[language]}!`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-3 rounded-full bg-blue-50 text-blue-500 hover:bg-blue-100 transition-colors"
-                        title="Share on Telegram"
-                    >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" /></svg>
-                    </a>
+                    {/* Removed individual Telegram button as requested/to fix confusion */}
                 </div>
             </div>
 
@@ -356,6 +584,48 @@ export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetail
                 onPause={() => setIsPlaying(false)}
                 className="hidden"
             />
+
+            {/* Hidden Share Card for Generation */}
+            <div className="absolute -top-[9999px] -left-[9999px]">
+                <VerseShareCard
+                    ref={shareCardRef}
+                    verse={verse}
+                    language={language}
+                    userName={user?.displayName || "A Miracle Memory User"}
+                    date={format(new Date(), "MMMM d, yyyy")}
+                    theme={shareTheme}
+                />
+            </div>
+            {/* Share Preview Modal */}
+            {showPreview && previewUrl && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl overflow-hidden max-w-sm w-full shadow-2xl scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                            <h3 className="font-bold text-stone-800">Share Verse</h3>
+                            <button
+                                onClick={() => setShowPreview(false)}
+                                className="p-2 hover:bg-stone-200 rounded-full transition-colors text-stone-500"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="p-6 flex flex-col items-center gap-6">
+                            <div className="relative shadow-lg rounded-xl overflow-hidden bg-stone-100 border border-stone-200">
+                                <img src={previewUrl} alt="Share Preview" className="max-w-full h-auto max-h-[50vh] object-contain" />
+                            </div>
+                            <div className="w-full">
+                                <button
+                                    onClick={performSystemShare}
+                                    className="w-full bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+                                    Share
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { UI_TEXT } from "@/data/translations";
 import { useLanguage } from "@/context/LanguageContext";
 import { SubscriptionManager } from "@/components/profile/SubscriptionManager";
+import { SharedGallery } from "@/components/profile/SharedGallery";
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth();
@@ -95,6 +96,9 @@ export default function ProfilePage() {
 
                 {/* Stats */}
                 <OverallStats allProgress={allProgress} profile={profile} />
+
+                {/* Shared Gallery */}
+                <SharedGallery />
 
                 {/* My Series */}
                 <div className="space-y-6">

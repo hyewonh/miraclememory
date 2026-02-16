@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db, auth } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
-import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { PayPalSubscription } from "@/components/pricing/PayPalSubscription";
 import { cn } from "@/lib/utils";
 
@@ -410,19 +409,30 @@ export function OnboardingModal({ isOpen, onClose, startAtPayment = false }: Onb
                                     setAuthError("");
                                     setLoading(true);
                                     try {
-                                        await signInWithGoogle();
+                                        const timeoutPromise = new Promise((_, reject) => {
+                                            setTimeout(() => reject(new Error("Google Sign-In timed out. Please try again.")), 15000);
+                                        });
+
+                                        await Promise.race([
+                                            signInWithGoogle(),
+                                            timeoutPromise
+                                        ]);
+
                                         // Save survey data for user (new or existing - merge is safe)
                                         if (auth.currentUser) {
                                             await setDoc(doc(db, "users", auth.currentUser.uid), {
                                                 survey: surveyData,
-                                                createdAt: new Date(), // This might overwrite, maybe check exists? 
-                                                // Actually merge: true handles partial updates. But createdAt?
-                                                // Ideally only set createdAt if new. But merge is safe for survey.
+                                                createdAt: new Date(),
+                                                isPremium: false
                                             }, { merge: true });
                                         }
                                         setStep(STEPS.PAYMENT);
                                     } catch (err: any) {
+                                        console.error("Onboarding Google Sign-In Error:", err);
                                         setAuthError(err.message);
+                                        if (err.code === 'auth/popup-blocked') {
+                                            alert("Popup blocked. Please allow popups for this site.");
+                                        }
                                     } finally {
                                         setLoading(false);
                                     }
@@ -542,16 +552,10 @@ export function OnboardingModal({ isOpen, onClose, startAtPayment = false }: Onb
                                     Step 2: Secure Payment via PayPal
                                 </div>
                                 <div className="min-h-[150px] relative z-0">
-                                    <PayPalScriptProvider options={{
-                                        clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "",
-                                        intent: "subscription",
-                                        vault: true
-                                    }}>
-                                        <PayPalSubscription
-                                            planId={selectedPlan === 'monthly' ? PAYPAL_PLANS.MONTHLY : PAYPAL_PLANS.YEARLY}
-                                            onSuccess={(subId) => handlePaymentSuccess(subId)}
-                                        />
-                                    </PayPalScriptProvider>
+                                    <PayPalSubscription
+                                        planId={selectedPlan === 'monthly' ? PAYPAL_PLANS.MONTHLY : PAYPAL_PLANS.YEARLY}
+                                        onSuccess={(subId) => handlePaymentSuccess(subId)}
+                                    />
                                 </div>
                             </div>
                             <p className="text-[10px] text-stone-400">

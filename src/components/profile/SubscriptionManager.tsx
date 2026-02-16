@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { UserProfile } from "@/types";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { CancelSubscriptionModal } from "./CancelSubscriptionModal";
 
 interface SubscriptionManagerProps {
     profile: UserProfile;
 }
 
 export function SubscriptionManager({ profile }: SubscriptionManagerProps) {
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
     if (!profile.isPremium) return null;
 
     // Calculate trial details
@@ -66,16 +70,19 @@ export function SubscriptionManager({ profile }: SubscriptionManagerProps) {
                     </ul>
                 </div>
 
-                <a
-                    href="https://www.paypal.com/myaccount/autopay/"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <button
+                    onClick={() => setIsCancelModalOpen(true)}
                     className="block w-full text-center py-3 rounded-xl border border-stone-300 text-stone-600 font-bold hover:bg-stone-50 hover:text-stone-900 transition-colors flex items-center justify-center gap-2"
                 >
-                    Manage / Cancel on PayPal
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                </a>
+                    Cancel Subscription
+                </button>
             </div>
+
+            <CancelSubscriptionModal
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                profile={profile}
+            />
         </div>
     );
 }

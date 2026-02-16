@@ -38,8 +38,18 @@ try {
 console.log("🔥 App Options:", app.options);
 
 const auth = getAuth(app);
-console.log("🔥 Auth Instance Config:", auth.config);
+// Explicitly set persistence to local to avoid issues
+import { setPersistence, browserLocalPersistence } from "firebase/auth";
+setPersistence(auth, browserLocalPersistence)
+    .then(() => console.log("💾 Firebase Auth Persistence set to LOCAL"))
+    .catch((err) => console.error("❌ Error setting auth persistence:", err));
+
+console.log("🔥 Auth Domain:", auth.config.authDomain);
+console.log("🔥 API Key (first 5):", auth.config.apiKey?.substring(0, 5));
+
+import { getStorage } from "firebase/storage";
 
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { app, auth, db };
+export { app, auth, db, storage };

@@ -134,6 +134,7 @@ export default function SeriesPage() {
                             verse={activeVerse}
                             language={language}
                             onRestrictedAction={(!isPremium && verses.indexOf(activeVerse) >= 4) ? handleRestrictedAction : undefined}
+                            onLoginRequired={() => setIsOnboardingOpen(true)}
                         />
                     </div>
                 )}

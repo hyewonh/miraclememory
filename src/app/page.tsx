@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center bg-background text-foreground font-sans selection:bg-primary selection:text-primary-foreground">
       {/* Navigation */}
-      <Navbar />
+      <Navbar isAbsolute={!user} />
 
       {/* Onboarding Modal (Trial Flow) */}
       <OnboardingModal

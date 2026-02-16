@@ -15,7 +15,7 @@ export function Hero({ onStartTrial, language = 'en' }: HeroProps) {
     const t = UI_TEXT.hero;
 
     return (
-        <section className="relative min-h-screen w-full flex flex-col items-center justify-start pt-32 md:pt-40 overflow-hidden text-center bg-[#fcf9f2]">
+        <section className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden text-center bg-[#fcf9f2]">
             {/* Background with Modern Gradient */}
             <div
                 className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-100"
@@ -26,8 +26,20 @@ export function Hero({ onStartTrial, language = 'en' }: HeroProps) {
 
             <div className="relative z-10 max-w-4xl mx-auto px-6 flex flex-col items-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
 
-                {/* Primary CTA - Top & Center */}
-                <div className="mb-8 w-full max-w-sm mx-auto">
+
+
+                <div className="space-y-6 mb-12">
+                    <h1 className="text-4xl md:text-6xl font-serif font-black text-stone-900 leading-tight drop-shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 tracking-tight whitespace-pre-line">
+                        {t.title[language]}
+                    </h1>
+
+                    <p className="text-xl md:text-2xl text-stone-600 font-serif italic max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-300">
+                        {t.subtitle[language]}
+                    </p>
+                </div>
+
+                {/* Primary CTA - Bottom & Center (Restored Position) */}
+                <div className="mb-12 w-full max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-400">
                     {!user ? (
                         <button
                             onClick={onStartTrial}
@@ -43,16 +55,6 @@ export function Hero({ onStartTrial, language = 'en' }: HeroProps) {
                             Continue Journey
                         </Link>
                     )}
-                </div>
-
-                <div className="space-y-6 mb-12">
-                    <h1 className="text-5xl md:text-7xl font-serif font-black text-stone-900 leading-tight drop-shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-200 tracking-tight whitespace-pre-line">
-                        {t.title[language]}
-                    </h1>
-
-                    <p className="text-xl md:text-2xl text-stone-600 font-serif italic max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-300">
-                        {t.subtitle[language]}
-                    </p>
                 </div>
 
                 {/* Secondary Actions */}

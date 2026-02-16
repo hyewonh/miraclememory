@@ -77,6 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signUpWithEmail = async (email: string, password: string, name: string) => {
+        console.log("AuthContext: signUpWithEmail called", { email, name }); // Debug log
+        if (!email) throw new Error("Email is required");
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             await updateProfile(userCredential.user, {

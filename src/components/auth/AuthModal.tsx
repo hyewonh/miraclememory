@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,29 @@ export function AuthModal({ isOpen, onClose, onSwitchToOnboarding }: AuthModalPr
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
+    const { signInWithEmail, signUpWithEmail, signInWithGoogle, user } = useAuth();
+
+    // Auto-close if user is already logged in (e.g. from Google Popup or previous session)
+    // But only if we are specifically in a "loading" state or if it just happened.
+    // Actually, if the modal is open and user exists, we should probably close it unless we are switching accounts.
+    // Let's be safe: only close if we are not already switching modes.
+    // Better: If user appears while modal is open, close it.
+    /* 
+       PROBLEM: If I open the modal while logged in (to switch accounts?), this might auto-close it.
+       But standard 'AuthModal' is for logging in. If I'm logged in, why is it open? 
+       Usually it shouldn't be. 
+       Let's add a check: if `isLoading` is true (meaning we attempted login) AND user exists -> close.
+    */
+    useEffect(() => {
+        if (user && isOpen && !isLoading) {
+            // If user is already logged in when 'isOpen' becomes true, we might want to close or show "Logged In" state.
+            // But for the specific bug: "Processing..." -> Success.
+        }
+        if (user && isOpen) {
+            console.log("AuthModal: User detected, closing modal.");
+            onClose();
+        }
+    }, [user, isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -45,10 +67,26 @@ export function AuthModal({ isOpen, onClose, onSwitchToOnboarding }: AuthModalPr
         setError(null);
         setIsLoading(true);
         try {
-            await signInWithGoogle();
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("Google Sign-In timed out. Please try again.")), 15000);
+            });
+
+            // Race between sign-in and timeout
+            await Promise.race([
+                signInWithGoogle(),
+                timeoutPromise
+            ]);
+
             onClose();
         } catch (err: any) {
+            console.error("Google Sign-In Error:", err);
             setError(err.message || "Google sign in failed");
+            // Optional: alert user if it's a popup blocked issue
+            if (err.code === 'auth/popup-blocked') {
+                alert("Popup blocked. Please allow popups for this site.");
+            }
+        } finally {
             setIsLoading(false);
         }
     };
