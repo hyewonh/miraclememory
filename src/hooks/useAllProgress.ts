@@ -3,81 +3,66 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, query, getDocs, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { SeriesProgress } from "./useProgress";
 
-export interface GlobalProgress {
-    totalVersesMemorized: number;
-    byLanguage: {
-        en: number;
-        ko: number;
-        zh: number;
-        es: number;
-    };
-    seriesCompletedCount: number;
-    loading: boolean;
+export interface AllSeriesProgress {
+    [seriesId: string]: SeriesProgress;
 }
 
 export function useAllProgress() {
     const { user } = useAuth();
-    const [stats, setStats] = useState<GlobalProgress>({
-        totalVersesMemorized: 0,
-        byLanguage: { en: 0, ko: 0, zh: 0, es: 0 },
-        seriesCompletedCount: 0,
-        loading: true
-    });
+    const [allProgress, setAllProgress] = useState<AllSeriesProgress>({});
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!user) {
-            setStats(prev => ({ ...prev, loading: false }));
+            setAllProgress({});
+            setLoading(false);
             return;
         }
 
         const collectionRef = collection(db, "users", user.uid, "series_progress");
+        // No query needed, we want all docs in the subcollection
 
         const unsubscribe = onSnapshot(collectionRef, (snapshot) => {
-            let total = 0;
-            const byLang = { en: 0, ko: 0, zh: 0, es: 0 };
-            let completedSeries = 0;
+            const progressMap: AllSeriesProgress = {};
 
-            snapshot.forEach(doc => {
-                const data = doc.data() as SeriesProgress; // This matches the shape from useProgress
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
 
-                // Handle legacy migration logic same as useProgress
+                // Handle legacy data structure migration (same as useProgress)
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const legacyData = data as any;
                 let completedVerses = data.completedVerses || {};
 
                 if (legacyData.completedVerseIds && Array.isArray(legacyData.completedVerseIds) && !data.completedVerses) {
-                    completedVerses = { en: legacyData.completedVerseIds };
+                    completedVerses = {
+                        en: legacyData.completedVerseIds
+                    };
                 }
 
-                // Aggregate counts
-                const enCount = completedVerses.en?.length || 0;
-                const koCount = completedVerses.ko?.length || 0;
-                const zhCount = completedVerses.zh?.length || 0;
-                const esCount = completedVerses.es?.length || 0;
-
-                byLang.en += enCount;
-                byLang.ko += koCount;
-                byLang.zh += zhCount;
-                byLang.es += esCount;
-
-                total += (enCount + koCount + zhCount + esCount);
-
-                if (data.isCompleted) completedSeries++;
+                progressMap[doc.id] = {
+                    completedVerses: {
+                        en: completedVerses.en || [],
+                        ko: completedVerses.ko || [],
+                        zh: completedVerses.zh || [],
+                        es: completedVerses.es || []
+                    },
+                    isCompleted: data.isCompleted || false,
+                    lastUpdated: data.lastUpdated || Date.now()
+                };
             });
 
-            setStats({
-                totalVersesMemorized: total,
-                byLanguage: byLang,
-                seriesCompletedCount: completedSeries,
-                loading: false
-            });
+            setAllProgress(progressMap);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching all progress:", error);
+            setLoading(false);
         });
 
         return () => unsubscribe();
     }, [user]);
 
-    return stats;
+    return { allProgress, loading };
 }

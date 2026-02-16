@@ -8,12 +8,32 @@ import { useProgress } from "@/hooks/useProgress";
 interface VerseDetailProps {
     verse: Verse;
     language: 'en' | 'ko' | 'zh' | 'es';
+    onRestrictedAction?: () => void;
 }
 
-
-
-export function VerseDetail({ verse, language }: VerseDetailProps) {
+export function VerseDetail({ verse, language, onRestrictedAction }: VerseDetailProps) {
     const { isMemorized, toggleVerseMemorized } = useProgress(verse.seriesId);
+    // ... existing code ...
+
+    const handleRecordClick = () => {
+        if (onRestrictedAction) {
+            onRestrictedAction();
+            return;
+        }
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    };
+
+    const handleMemorizeClick = () => {
+        if (onRestrictedAction) {
+            onRestrictedAction();
+            return;
+        }
+        toggleVerseMemorized(verse.id);
+    };
     const memorized = isMemorized(verse.id);
 
     const [isRecording, setIsRecording] = useState(false);
@@ -105,13 +125,25 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
     };
 
     const getMaskedText = (text: string) => {
-        return text.split(' ').map(word => {
-            if (word.length === 0) return word;
+        return text.split(' ').map((word, idx) => {
+            if (word.length === 0) return <span key={idx}> </span>;
             const firstChar = word.charAt(0);
-            // Replace rest with asterisk per user request
-            const masked = "*".repeat(word.length - 1);
-            return firstChar + masked;
-        }).join(' ');
+            // Replace rest with underscore and style lighter
+            // Using underscore looks like a blank line
+            const maskedLength = word.length - 1;
+            const masked = "_".repeat(maskedLength);
+
+            return (
+                <span key={idx} className="inline-block whitespace-pre">
+                    <span className="text-stone-900">{firstChar}</span>
+                    {maskedLength > 0 && (
+                        <span className="text-stone-300 tracking-wider pl-[1px]">{masked}</span>
+                    )}
+                    {/* Add space after word */}
+                    {" "}
+                </span>
+            );
+        });
     };
 
     const handleShare = async () => {
@@ -158,10 +190,10 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
                     <div className="text-sm font-bold tracking-widest text-primary uppercase mb-2">
                         Memorize This Verse
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-serif font-bold text-stone-900 leading-tight">
+                    <div className="text-xl md:text-2xl font-serif font-bold text-stone-900 leading-relaxed min-h-[4rem] flex flex-wrap justify-center items-center">
                         {testMode ? getMaskedText(verse.text[language]) : verse.text[language]}
-                    </h2>
-                    <p className="text-xl text-stone-500 mt-4 font-serif italic">
+                    </div>
+                    <p className="text-base text-stone-500 mt-4 font-serif italic">
                         — {verse.reference[language]}
                     </p>
                 </div>
@@ -173,7 +205,7 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
                         {/* Recorder */}
                         {!audioUrl ? (
                             <button
-                                onClick={isRecording ? stopRecording : startRecording}
+                                onClick={handleRecordClick}
                                 className={cn(
                                     "w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg",
                                     isRecording
@@ -272,7 +304,7 @@ export function VerseDetail({ verse, language }: VerseDetailProps) {
                 {/* Action Buttons: Mark as Memorized & Share */}
                 <div className="flex items-center justify-center gap-4 pt-4 border-t border-stone-100">
                     <button
-                        onClick={() => toggleVerseMemorized(verse.id)}
+                        onClick={handleMemorizeClick}
                         className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-stone-50 transition-colors group"
                     >
                         <div className={cn(

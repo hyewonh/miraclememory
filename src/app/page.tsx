@@ -7,7 +7,6 @@ import { Pricing } from "@/components/pricing/Pricing";
 import { getDailyVerse } from "@/services/verseService";
 import { useEffect, useState } from "react";
 import { Verse } from "@/types";
-import { AuthModal } from "@/components/auth/AuthModal";
 import { OnboardingModal } from "@/components/auth/OnboardingModal";
 import { INITIAL_SERIES } from "@/data/seedData";
 import { SeriesCard } from "@/components/series/SeriesCard";
@@ -16,6 +15,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSelector } from "@/components/layout/LanguageSelector";
 import { UI_TEXT } from "@/data/translations";
+import { Navbar } from "@/components/layout/Navbar";
 
 export default function Home() {
   const { user, logout } = useAuth();
@@ -23,7 +23,6 @@ export default function Home() {
   const { language } = useLanguage();
 
   const [dailyVerse, setDailyVerse] = useState<Verse | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   useEffect(() => {
@@ -38,53 +37,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-background text-foreground font-sans selection:bg-primary selection:text-primary-foreground">
-      {/* Navigation (Rebranded & Simplified) */}
-      <nav className={cn("w-full max-w-7xl px-6 py-6 grid grid-cols-3 items-center z-50 transition-all duration-300", !user ? "absolute top-0 left-1/2 -translate-x-1/2 text-stone-900" : "relative")}>
-
-        {/* Left: Language Selector */}
-        <div className="justify-self-start">
-          <LanguageSelector />
-        </div>
-
-        {/* Center: Logo */}
-        <div className="justify-self-center text-center">
-          <div className="text-xl md:text-2xl font-sans font-bold tracking-[0.1em] text-stone-900 uppercase whitespace-nowrap">
-            Miracle Memory
-          </div>
-        </div>
-
-        {/* Right: User Menu */}
-        <div className="justify-self-end flex items-center gap-4">
-          {user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium hidden sm:inline-block">{UI_TEXT.nav.greeting[language]}, {user.displayName?.split(" ")[0]}</span>
-              <button
-                onClick={() => logout()}
-                className="bg-secondary text-secondary-foreground px-5 py-2 rounded-full text-xs md:text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                {UI_TEXT.nav.signOut[language]}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="bg-stone-900 text-white px-5 py-2 rounded-full text-xs md:text-sm font-medium hover:bg-stone-800 transition-colors shadow-lg"
-            >
-              {UI_TEXT.nav.signIn[language]}
-            </button>
-          )}
-        </div>
-      </nav>
-
-      {/* Auth Modal (Standard Login) */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onSwitchToOnboarding={() => {
-          setIsAuthModalOpen(false);
-          setIsOnboardingOpen(true);
-        }}
-      />
+      {/* Navigation */}
+      <Navbar />
 
       {/* Onboarding Modal (Trial Flow) */}
       <OnboardingModal
@@ -139,6 +93,6 @@ export default function Home() {
       <footer className="w-full py-12 text-center text-sm text-stone-500 border-t border-stone-100 bg-[#fcf9f2]">
         <p>&copy; {new Date().getFullYear()} Miracle Memory. Excellence for God.</p>
       </footer>
-    </div>
+    </div >
   );
 }

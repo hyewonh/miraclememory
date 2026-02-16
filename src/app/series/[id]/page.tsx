@@ -13,25 +13,49 @@ import { useProgress } from "@/hooks/useProgress";
 import { useLanguage } from "@/context/LanguageContext";
 import { UI_TEXT } from "@/data/translations";
 
+import { OnboardingModal } from "@/components/auth/OnboardingModal";
+import { useProfile } from "@/hooks/useProfile";
+
+import { Navbar } from "@/components/layout/Navbar";
+
 export default function SeriesPage() {
     const params = useParams();
     const router = useRouter();
     const { user } = useAuth();
+    const { profile } = useProfile();
     const { language } = useLanguage();
     const id = params?.id as string;
 
     const series = INITIAL_SERIES.find(s => s.id === id);
-    // In real app, query by seriesId
     const verses = VERSES.filter(v => v.seriesId === id);
 
     const { progress, isMemorized, getCompletedCount } = useProgress(id);
     const [visibleCount, setVisibleCount] = useState(12);
+    const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
     // Default to first verse if no progress
     const [activeVerse, setActiveVerse] = useState<Verse | null>(verses[0] || null);
 
     const visibleVerses = verses.slice(0, visibleCount);
     const hasMore = visibleCount < verses.length;
+
+    const isPremium = profile?.isPremium || false;
+
+    // Access Logic: First 4 verses (indices 0-3) are free. 5+ (index 4+) require premium/login.
+    // Actually, prompt says "Sign in not required for first 4". 
+    // And "If not logged in, clicking 5th... triggers 7-Day Free Trial".
+    // So if user IS logged in but NOT premium, do they get access? 
+    // Usually "Free Trial" implies they need a subscription. 
+    // Let's assume: 
+    // - Unauthenticated: Limit 4.
+    // - Authenticated Free: Limit 4 (unless we have a specific "Free Tier" that allows more? The prompt implies 7-day trial is the gateway).
+    // - Authenticated Premium: Unlimited.
+
+    // So logic: Locked if (index >= 4 AND !isPremium).
+
+    const handleRestrictedAction = () => {
+        setIsOnboardingOpen(true);
+    };
 
     const completedCount = getCompletedCount(language);
     const totalVerses = verses.length;
@@ -62,14 +86,20 @@ export default function SeriesPage() {
 
     return (
         <div className="min-h-screen bg-[#fdfbf7]">
+            {/* Onboarding Modal for Restrictions */}
+            <OnboardingModal
+                isOpen={isOnboardingOpen}
+                onClose={() => setIsOnboardingOpen(false)}
+            />
+
+            {/* Navbar */}
+            <Navbar className="bg-white border-b border-stone-100" />
+
             {/* Header */}
-            <div className="bg-stone-900 text-white py-20 px-6 relative overflow-hidden">
+            <div className="bg-stone-900 text-white py-10 md:py-20 px-6 relative overflow-hidden">
                 <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <button onClick={() => router.push('/')} className="mb-8 text-stone-400 hover:text-white flex items-center justify-center gap-2 transition-colors">
-                        ← {t.back[language]}
-                    </button>
-                    <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">{series.title[language]}</h1>
-                    <p className="text-xl text-stone-400 font-serif max-w-2xl mx-auto mb-8">{series.description[language]}</p>
+                    <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">{series.title[language]}</h1>
+                    <p className="text-lg md:text-xl text-stone-400 font-serif max-w-2xl mx-auto mb-6">{series.description[language]}</p>
 
                     {/* Progress Bar */}
                     <div className="max-w-md mx-auto">
@@ -77,9 +107,9 @@ export default function SeriesPage() {
                             <span>Progress</span>
                             <span>{progressPercentage}% ({completedCount}/{totalVerses})</span>
                         </div>
-                        <div className="h-3 bg-stone-800 rounded-full overflow-hidden">
+                        <div className="h-4 bg-stone-800 rounded-full overflow-hidden ring-1 ring-stone-700">
                             <div
-                                className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 transition-all duration-1000 ease-out rounded-full"
+                                className="h-full bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-400 transition-all duration-1000 ease-out rounded-full shadow-[0_0_10px_rgba(251,191,36,0.5)]"
                                 style={{ width: `${progressPercentage}%` }}
                             />
                         </div>
@@ -99,7 +129,11 @@ export default function SeriesPage() {
                 {/* Featured Verse Card (Top) */}
                 {activeVerse && (
                     <div className="mb-16">
-                        <VerseDetail verse={activeVerse} language={language} />
+                        <VerseDetail
+                            verse={activeVerse}
+                            language={language}
+                            onRestrictedAction={(!isPremium && verses.indexOf(activeVerse) >= 4) ? handleRestrictedAction : undefined}
+                        />
                     </div>
                 )}
 
@@ -109,34 +143,60 @@ export default function SeriesPage() {
                         <span>Curriculum Schedule</span>
                         <div className="flex items-center gap-4">
                             <span className="text-base font-sans font-normal text-stone-500">{verses.length} Verses</span>
-                            <a
-                                href={`/series/${id}/print`}
-                                target="_blank"
+                            <button
+                                onClick={() => {
+                                    if (!isPremium) {
+                                        handleRestrictedAction();
+                                    } else {
+                                        window.open(`/series/${id}/print`, '_blank');
+                                    }
+                                }}
                                 className="text-sm font-bold bg-stone-100 text-stone-600 px-3 py-1 rounded hover:bg-stone-200 transition-colors flex items-center gap-1"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                                 Print
-                            </a>
+                            </button>
                         </div>
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {visibleVerses.map((verse, idx) => {
                             const isVerseMemorized = isMemorized(verse.id);
+                            const isLocked = idx >= 4 && !isPremium;
 
                             return (
                                 <button
                                     key={verse.id}
-                                    onClick={() => setActiveVerse(verse)}
+                                    onClick={() => {
+                                        if (isLocked) {
+                                            handleRestrictedAction();
+                                        } else {
+                                            setActiveVerse(verse);
+                                            // Scroll to top smoothly
+                                            window.scrollTo({ top: 400, behavior: 'smooth' });
+                                        }
+                                    }}
                                     className={cn(
-                                        "text-left p-6 rounded-2xl bg-white border transition-all duration-300 hover:shadow-lg flex flex-col gap-4 relative overflow-hidden group",
+                                        "text-left p-6 rounded-2xl bg-white border transition-all duration-300 flex flex-col gap-4 relative overflow-hidden group",
                                         activeVerse?.id === verse.id
                                             ? "border-stone-800 ring-1 ring-stone-800 shadow-md"
-                                            : "border-stone-100 hover:border-stone-300 shadow-sm"
+                                            : "border-stone-100 hover:border-stone-300 shadow-sm",
+                                        isLocked && "opacity-75 bg-stone-50"
                                     )}
                                 >
+                                    {/* Locked Overlay */}
+                                    {isLocked && (
+                                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-20 group-hover:bg-white/40 transition-colors">
+                                            <div className="bg-stone-900 text-white rounded-full p-3 shadow-xl transform group-hover:scale-110 transition-transform">
+                                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Memorized Indicator Overlay */}
-                                    {isVerseMemorized && (
+                                    {isVerseMemorized && !isLocked && (
                                         <div className="absolute top-0 right-0 bg-amber-100 text-amber-600 px-3 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-wider shadow-sm z-10">
                                             Memorized
                                         </div>
@@ -171,7 +231,8 @@ export default function SeriesPage() {
                                         </div>
                                         <div className={cn(
                                             "text-sm leading-relaxed transition-colors",
-                                            isVerseMemorized ? "text-stone-600" : "text-stone-500"
+                                            isVerseMemorized ? "text-stone-600" : "text-stone-500",
+                                            isLocked && "blur-sm select-none"
                                         )}>
                                             {verse.text[language]}
                                         </div>
