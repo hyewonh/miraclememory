@@ -9,6 +9,8 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
 } from 'recharts';
+import UserDetailModal from "./UserDetailModal";
+import GrowthChart from "@/components/admin/GrowthChart";
 
 // Mock Admin Check (Replace with real admin check logic or hardcoded email for now)
 const ADMIN_EMAILS = ["ryan@example.com", "admin@kingdommemory.com", "hyewonh@gmail.com"]; // Add your email here to test
@@ -18,6 +20,32 @@ export default function AdminDashboard() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'subscriptions'>('overview');
+    const [selectedUser, setSelectedUser] = useState<any>(null); // For Detail Modal
+
+    // Search & Filter State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<'all' | 'premium' | 'free'>('all');
+    const [faithFilter, setFaithFilter] = useState<string>('all');
+
+    // Update Premium Status Handler
+    const handleUpdatePremiumStatus = async (userId: string, isPremium: boolean) => {
+        const action = isPremium ? "grant Premium access to" : "revoke Premium access from";
+        if (!window.confirm(`Are you sure you want to ${action} this user?`)) {
+            return;
+        }
+
+        try {
+            await import("firebase/firestore").then(({ doc, updateDoc }) =>
+                updateDoc(doc(db, "users", userId), { isPremium })
+            );
+            // Update local state
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, isPremium } : u));
+            alert(`User premium status updated successfully.`);
+        } catch (error: any) {
+            console.error("Error updating user:", error);
+            alert("Failed to update user: " + error.message);
+        }
+    };
 
     useEffect(() => {
         // Check for custom admin cookie
@@ -131,6 +159,23 @@ export default function AdminDashboard() {
         );
     }
 
+    // Filter Logic
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = (
+            (user.name?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
+            (user.email?.toLowerCase() || "").includes(searchQuery.toLowerCase())
+        );
+        const matchesStatus = statusFilter === 'all'
+            ? true
+            : statusFilter === 'premium' ? user.isPremium
+                : !user.isPremium;
+        const matchesFaith = faithFilter === 'all'
+            ? true
+            : user.survey?.faithStage === faithFilter;
+
+        return matchesSearch && matchesStatus && matchesFaith;
+    });
+
     // --- Analytics Data Prep ---
     const totalUsers = users.length;
     const premiumUsers = users.filter(u => u.isPremium).length;
@@ -151,6 +196,32 @@ export default function AdminDashboard() {
         return acc;
     }, {});
     const goalChartData = Object.entries(goals).map(([name, value]) => ({ name, value }));
+
+    // Growth Data (Last 30 Days)
+    const growthData = (() => {
+        const last30Days = new Array(30).fill(0).map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (29 - i));
+            return d.toISOString().split('T')[0];
+        });
+
+        const counts: Record<string, number> = {};
+        last30Days.forEach(date => counts[date] = 0);
+
+        users.forEach(u => {
+            if (u.createdAt) {
+                const dateKey = new Date(u.createdAt).toISOString().split('T')[0];
+                if (counts[dateKey] !== undefined) {
+                    counts[dateKey]++;
+                }
+            }
+        });
+
+        return last30Days.map(date => ({
+            date: date.slice(5), // "MM-DD"
+            count: counts[date]
+        }));
+    })();
 
     // CSV Export
     const downloadCSV = () => {
@@ -241,6 +312,14 @@ export default function AdminDashboard() {
                 {/* 1. OVERVIEW TAB */}
                 {activeTab === 'overview' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in">
+                        {/* 1. Growth Chart (New) */}
+                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-stone-100 md:col-span-2">
+                            <h3 className="text-lg font-bold mb-6">30-Day User Growth</h3>
+                            <div className="h-64">
+                                <GrowthChart data={growthData} />
+                            </div>
+                        </div>
+
                         <div className="bg-white p-8 rounded-2xl shadow-sm border border-stone-100">
                             <h3 className="text-lg font-bold mb-6">User Faith Journey</h3>
                             <div className="h-64">
@@ -287,15 +366,45 @@ export default function AdminDashboard() {
                 {/* 2. USERS TAB */}
                 {activeTab === 'users' && (
                     <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden animate-in fade-in">
-                        <div className="p-6 border-b border-stone-100 flex justify-between items-center">
-                            <h3 className="text-lg font-bold">All Users ({users.length})</h3>
-                            <button
-                                onClick={downloadCSV}
-                                className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-lg hover:bg-stone-800 transition-colors text-sm font-bold"
-                            >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                Download CSV
-                            </button>
+                        <div className="p-6 border-b border-stone-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <h3 className="text-lg font-bold">All Users ({filteredUsers.length})</h3>
+
+                            <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
+                                <input
+                                    type="text"
+                                    placeholder="Search name or email..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="px-4 py-2 border border-stone-200 rounded-lg text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-stone-500"
+                                />
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                                    className="px-4 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
+                                >
+                                    <option value="all">All Status</option>
+                                    <option value="premium">Premium</option>
+                                    <option value="free">Free</option>
+                                </select>
+                                <select
+                                    value={faithFilter}
+                                    onChange={(e) => setFaithFilter(e.target.value)}
+                                    className="px-4 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-stone-500"
+                                >
+                                    <option value="all">All Faith Stages</option>
+                                    <option value="New Believer">New Believer</option>
+                                    <option value="Growing">Growing</option>
+                                    <option value="Mature">Mature</option>
+                                    <option value="Seeker">Seeker</option>
+                                </select>
+                                <button
+                                    onClick={downloadCSV}
+                                    className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-lg hover:bg-stone-800 transition-colors text-sm font-bold whitespace-nowrap"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    CSV
+                                </button>
+                            </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
@@ -305,14 +414,14 @@ export default function AdminDashboard() {
                                         <th className="p-4">Joined</th>
                                         <th className="p-4">Faith Stage</th>
                                         <th className="p-4">Status</th>
-                                        <th className="p-4">Actions</th>
+                                        <th className="p-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-stone-100">
-                                    {users.map((u) => (
+                                    {filteredUsers.map((u) => (
                                         <tr key={u.id} className="hover:bg-stone-50">
-                                            <td className="p-4">
-                                                <div className="font-bold text-stone-800">{u.name || "Anonymous"}</div>
+                                            <td className="p-4 cursor-pointer group" onClick={() => setSelectedUser(u)}>
+                                                <div className="font-bold text-stone-800 group-hover:text-stone-600 underline decoration-stone-300 underline-offset-4">{u.name || "Anonymous"}</div>
                                                 <div className="text-stone-500 text-xs">{u.email}</div>
                                             </td>
                                             <td className="p-4 text-stone-600">
@@ -330,10 +439,27 @@ export default function AdminDashboard() {
                                                     <span className="px-2 py-1 bg-stone-100 text-stone-500 rounded text-xs font-bold">Free</span>
                                                 )}
                                             </td>
-                                            <td className="p-4">
+                                            <td className="p-4 flex justify-end gap-2">
+                                                {u.isPremium ? (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleUpdatePremiumStatus(u.id, false); }}
+                                                        className="px-2 py-1 text-xs font-bold border border-red-200 text-red-600 rounded hover:bg-red-50 transition-colors"
+                                                        title="Revoke Premium"
+                                                    >
+                                                        Revoke
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleUpdatePremiumStatus(u.id, true); }}
+                                                        className="px-2 py-1 text-xs font-bold border border-emerald-200 text-emerald-600 rounded hover:bg-emerald-50 transition-colors"
+                                                        title="Grant Premium"
+                                                    >
+                                                        Grant
+                                                    </button>
+                                                )}
                                                 <button
-                                                    onClick={() => handleDeleteUser(u.id)}
-                                                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }}
+                                                    className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                                                     title="Delete User Data"
                                                 >
                                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -343,10 +469,25 @@ export default function AdminDashboard() {
                                             </td>
                                         </tr>
                                     ))}
+                                    {filteredUsers.length === 0 && (
+                                        <tr>
+                                            <td colSpan={5} className="p-8 text-center text-stone-500">
+                                                No users found matching your filters.
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                     </div>
+                )}
+
+                {/* User Detail Modal */}
+                {selectedUser && (
+                    <UserDetailModal
+                        user={selectedUser}
+                        onClose={() => setSelectedUser(null)}
+                    />
                 )}
 
                 {/* 3. SUBSCRIPTIONS TAB */}
