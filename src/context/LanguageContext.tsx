@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export type Language = 'en' | 'ko' | 'zh' | 'es';
+export type Language = 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr';
 
 interface LanguageContextType {
     language: Language;
@@ -18,7 +18,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // Load persisted language preference
         const saved = localStorage.getItem('app-language') as Language;
-        if (saved && ['en', 'ko', 'zh', 'es'].includes(saved)) {
+        if (saved && ['en', 'ko', 'zh', 'es', 'de', 'fr'].includes(saved)) {
             setLanguage(saved);
         }
     }, []);

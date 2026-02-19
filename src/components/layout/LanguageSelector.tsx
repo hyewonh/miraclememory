@@ -10,6 +10,8 @@ const LANGUAGES = [
     { code: 'ko', label: 'Korean' },
     { code: 'zh', label: 'Chinese' },
     { code: 'es', label: 'Spanish' },
+    { code: 'de', label: 'Deutsch' },
+    { code: 'fr', label: 'Français' }
 ] as const;
 
 export function LanguageSelector() {
