@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/firebase";
 import { writeBatch, doc, collection } from "firebase/firestore";
-import { INITIAL_SERIES, INITIAL_VERSES } from "@/data/seedData";
+import { INITIAL_SERIES, VERSES } from "@/data/seedData";
 import { useState } from "react";
 
 export function Seeder() {
@@ -23,7 +23,7 @@ export function Seeder() {
             });
 
             // Seed Verses
-            INITIAL_VERSES.forEach((verse) => {
+            VERSES.forEach((verse) => {
                 const ref = doc(db, "verses", verse.id);
                 batch.set(ref, verse);
             });
