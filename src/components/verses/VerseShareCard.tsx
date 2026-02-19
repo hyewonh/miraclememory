@@ -5,7 +5,7 @@ import { forwardRef } from "react";
 
 interface VerseShareCardProps {
     verse: Verse;
-    language: 'en' | 'ko' | 'zh' | 'es';
+    language: 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr';
     userName?: string;
     date: string;
     theme?: string;

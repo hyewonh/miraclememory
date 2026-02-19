@@ -6,7 +6,7 @@ import { UI_TEXT } from "@/data/translations"; // Import translations
 
 interface HeroProps {
     onStartTrial?: () => void;
-    language?: 'en' | 'ko' | 'zh' | 'es'; // Add language prop
+    language?: 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr'; // Add language prop
 }
 
 export function Hero({ onStartTrial, language = 'en' }: HeroProps) {

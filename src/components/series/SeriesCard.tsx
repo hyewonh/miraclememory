@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface SeriesCardProps {
     series: Series;
-    language: 'en' | 'ko' | 'zh' | 'es';
+    language: 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr';
     isLocked?: boolean;
     onUnlock?: () => void;
 }

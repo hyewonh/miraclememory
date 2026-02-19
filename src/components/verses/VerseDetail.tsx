@@ -15,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 
 interface VerseDetailProps {
     verse: Verse;
-    language: 'en' | 'ko' | 'zh' | 'es';
+    language: 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr';
     onRestrictedAction?: () => void;
     onLoginRequired?: () => void;
 }

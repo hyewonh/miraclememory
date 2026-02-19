@@ -14,11 +14,11 @@ export default function SeriesPrintPage() {
 
     const [series, setSeries] = useState<Series | null>(null);
     const [courseVerses, setCourseVerses] = useState<Verse[]>([]);
-    const [language, setLanguage] = useState<'en' | 'ko' | 'zh' | 'es'>('en'); // Default to English
+    const [language, setLanguage] = useState<'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr'>('en'); // Default to English
 
     useEffect(() => {
         // Hydrate from local storage if available, or just default to EN
-        const saved = localStorage.getItem('app-language') as 'en' | 'ko' | 'zh' | 'es';
+        const saved = localStorage.getItem('app-language') as 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr';
         if (saved) setLanguage(saved);
     }, []);
 

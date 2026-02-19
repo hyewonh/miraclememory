@@ -13,6 +13,8 @@ export interface SeriesProgress {
         ko?: string[];
         zh?: string[];
         es?: string[];
+        de?: string[];
+        fr?: string[];
     };
     isCompleted: boolean;
     lastUpdated: number;
@@ -55,7 +57,9 @@ export function useProgress(seriesId: string) {
                         en: completedVerses.en || [],
                         ko: completedVerses.ko || [],
                         zh: completedVerses.zh || [],
-                        es: completedVerses.es || []
+                        es: completedVerses.es || [],
+                        de: completedVerses.de || [],
+                        fr: completedVerses.fr || []
                     },
                     isCompleted: data.isCompleted || false,
                     lastUpdated: data.lastUpdated || Date.now()
@@ -63,7 +67,7 @@ export function useProgress(seriesId: string) {
             } else {
                 console.log("✨ No progress doc found, initializing empty.");
                 setProgress({
-                    completedVerses: { en: [], ko: [], zh: [], es: [] },
+                    completedVerses: { en: [], ko: [], zh: [], es: [], de: [], fr: [] },
                     isCompleted: false,
                     lastUpdated: Date.now()
                 });
@@ -201,7 +205,7 @@ export function useProgress(seriesId: string) {
             return progress?.completedVerses[language]?.includes(verseId) || false;
         },
         // Helper to check completion for *any* language or specific language
-        getCompletedCount: (lang: 'en' | 'ko' | 'zh' | 'es' = language) => {
+        getCompletedCount: (lang: 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr' = language) => {
             return progress?.completedVerses[lang]?.length || 0;
         }
     };
