@@ -8,7 +8,8 @@ export function PaypalProvider({ children }: { children: React.ReactNode }) {
             clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "test",
             currency: "USD",
             intent: "subscription",
-            vault: true
+            vault: true,
+            commit: true
         }}>
             {children}
         </PayPalScriptProvider>
