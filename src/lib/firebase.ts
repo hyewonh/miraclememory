@@ -17,25 +17,7 @@ if (typeof window !== "undefined") {
 }
 
 // Initialize Firebase
-let app;
-const APP_NAME = "kingdom-memory-client";
-
-try {
-    const existingApp = getApps().find(a => a.name === APP_NAME);
-    if (existingApp) {
-        app = existingApp;
-        console.log("♻️ Using EXISTING named Firebase App:", app.name);
-    } else {
-        app = initializeApp(firebaseConfig, APP_NAME);
-        console.log("✅ Initialized NEW named Firebase App:", app.name);
-    }
-} catch (e) {
-    console.error("❌ Error initializing Firebase App:", e);
-    // Fallback to default app if named fails
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-}
-
-console.log("🔥 App Options:", app.options);
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 const auth = getAuth(app);
 // Explicitly set persistence to local to avoid issues

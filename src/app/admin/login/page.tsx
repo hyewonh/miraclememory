@@ -22,11 +22,19 @@ export default function AdminLoginPage() {
         setError("");
         try {
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
-            router.push("/admin");
+            provider.setCustomParameters({ prompt: 'select_account' });
+            const result = await signInWithPopup(auth, provider);
+            console.log("Logged in:", result.user.email);
+            // Redirection is handled by the useEffect
         } catch (error: any) {
-            console.error("Login failed:", error);
-            setError("Failed to sign in. Please try again.");
+            console.error("Login failed detailed error:", error);
+            if (error.code === 'auth/unauthorized-domain') {
+                setError(`Domain Not Authorized: Please add this domain to Firebase Console. (${window.location.hostname})`);
+            } else if (error.code === 'auth/popup-blocked') {
+                setError("Popup Blocked: Please enable popups for this site.");
+            } else {
+                setError("Failed to sign in: " + (error.message || "Unknown error"));
+            }
         }
     };
 
