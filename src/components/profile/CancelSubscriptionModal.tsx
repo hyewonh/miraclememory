@@ -98,10 +98,9 @@ export function CancelSubscriptionModal({ isOpen, onClose, profile }: CancelSubs
                                 <div className="bg-stone-50 p-4 rounded-xl text-left border border-stone-100">
                                     <h5 className="font-bold text-stone-800 text-sm mb-2">Kingdom Partner Benefits you'll lose:</h5>
                                     <ul className="text-sm text-stone-600 space-y-1 list-disc pl-4">
-                                        <li>Pro Audio Narration</li>
+                                        <li>Unlimited Audio Recording</li>
                                         <li>Unlimited Verse Access</li>
                                         <li>Detailed Progress Tracking</li>
-                                        <li>Priority Support</li>
                                     </ul>
                                 </div>
                             </div>
