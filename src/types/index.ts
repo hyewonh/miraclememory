@@ -1,10 +1,12 @@
-export type Language = 'en' | 'ko' | 'zh' | 'es';
+export type Language = 'en' | 'ko' | 'zh' | 'es' | 'de' | 'fr';
 
 export interface MultiLanguageContent {
     en: string;
     ko: string;
     zh: string;
     es: string;
+    de: string;
+    fr: string;
 }
 
 export interface Series {
