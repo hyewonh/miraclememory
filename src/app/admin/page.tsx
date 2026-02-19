@@ -14,7 +14,7 @@ import UserDetailModal from "./UserDetailModal";
 import GrowthChart from "@/components/admin/GrowthChart";
 
 // Mock Admin Check (Replace with real admin check logic or hardcoded email for now)
-const ADMIN_EMAILS = ["ryan@example.com", "admin@kingdommemory.com", "hyewonh@gmail.com"]; // Add your email here to test
+const ADMIN_EMAILS = ["hyewonh@gmail.com"];
 
 export default function AdminDashboard() {
     const { user, loading: authLoading } = useAuth();

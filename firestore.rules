@@ -3,7 +3,7 @@ service cloud.firestore {
     
     // Global Admin Rule: Allow specific emails to read/write EVERYTHING
     match /{document=**} {
-      allow read, write: if request.auth != null && request.auth.token.email in ["hyewonh@gmail.com", "ryan@example.com", "admin@kingdommemory.com"];
+      allow read, write: if request.auth != null && request.auth.token.email in ["hyewonh@gmail.com"];
     }
 
     match /users/{userId}/{document=**} {
