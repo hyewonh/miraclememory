@@ -67,6 +67,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const shareCardRef = useRef<HTMLDivElement>(null);
     const [shareTheme, setShareTheme] = useState<string>("");
+    const [wasSaved, setWasSaved] = useState(false);
 
     const PASTEL_THEMES = [
         "linear-gradient(135deg, #fcf9f2 0%, #f5f0e1 100%)", // Beige
@@ -265,6 +266,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
     const handleShare = async () => {
         if (!shareCardRef.current) return;
         setIsSharing(true);
+        setWasSaved(false);
 
         try {
             // Generate a random theme if not set (though effect handles it, good for refresh)
@@ -350,7 +352,11 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
             return;
         }
 
-        saveToHistory(previewBlob).catch(err => console.error("Background save failed:", err));
+        if (!wasSaved) {
+            saveToHistory(previewBlob)
+                .then(() => setWasSaved(true))
+                .catch(err => console.error("Background save failed:", err));
+        }
 
         const filename = getSafeFilename();
         const file = new File([previewBlob], filename, { type: "image/png" });
@@ -613,10 +619,48 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                             <div className="relative shadow-lg rounded-xl overflow-hidden bg-stone-100 border border-stone-200">
                                 <img src={previewUrl} alt="Share Preview" className="max-w-full h-auto max-h-[50vh] object-contain" />
                             </div>
-                            <div className="w-full">
+                            <div className="flex gap-3 w-full">
+                                <button
+                                    onClick={async () => {
+                                        if (!previewBlob || wasSaved) return;
+                                        setIsUploading(true);
+                                        try {
+                                            await saveToHistory(previewBlob);
+                                            setWasSaved(true);
+                                            alert("Saved to your profile!");
+                                        } catch (e) {
+                                            console.error(e);
+                                            alert("Failed to save.");
+                                        } finally {
+                                            setIsUploading(false);
+                                        }
+                                    }}
+                                    disabled={isUploading || wasSaved}
+                                    className={cn(
+                                        "flex-1 py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2",
+                                        wasSaved
+                                            ? "bg-stone-100 text-stone-400 cursor-default"
+                                            : "bg-stone-200 text-stone-800 hover:bg-stone-300"
+                                    )}
+                                >
+                                    {isUploading ? (
+                                        <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    ) : wasSaved ? (
+                                        <>
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                            Saved
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                                            Save
+                                        </>
+                                    )}
+                                </button>
+
                                 <button
                                     onClick={performSystemShare}
-                                    className="w-full bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2"
+                                    className="flex-1 bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                                     Share

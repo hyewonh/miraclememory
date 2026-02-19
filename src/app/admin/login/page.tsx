@@ -1,72 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function AdminLoginPage() {
     const router = useRouter();
-    const [id, setId] = useState("");
-    const [password, setPassword] = useState("");
+    const { user } = useAuth();
     const [error, setError] = useState("");
 
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-
-        if (id === "swan" && password === "1234") {
-            // Set cookie for 1 day
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (1 * 24 * 60 * 60 * 1000));
-            document.cookie = `miracle_admin_token=true;expires=${expires.toUTCString()};path=/`;
-
-            // Redirect to admin dashboard
+    // If already logged in, redirect to admin dashboard
+    useEffect(() => {
+        if (user) {
             router.push("/admin");
-        } else {
-            setError("Invalid ID or Password");
+        }
+    }, [user, router]);
+
+    const handleGoogleLogin = async () => {
+        setError("");
+        try {
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+            router.push("/admin");
+        } catch (error: any) {
+            console.error("Login failed:", error);
+            setError("Failed to sign in. Please try again.");
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-stone-50 p-4">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-stone-200 w-full max-w-sm">
-                <div className="text-center mb-8">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-stone-200 w-full max-w-sm text-center">
+                <div className="mb-8">
                     <span className="text-4xl">👑</span>
                     <h1 className="text-2xl font-serif font-bold text-stone-900 mt-4">Admin Access</h1>
-                    <p className="text-stone-500 text-sm">Enter your credentials to continue</p>
+                    <p className="text-stone-500 text-sm">Sign in with an authorized Google account</p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold text-stone-700 mb-1">ID</label>
-                        <input
-                            type="text"
-                            value={id}
-                            onChange={(e) => setId(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 outline-none"
-                            placeholder="Enter ID"
-                            autoFocus
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-stone-700 mb-1">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 outline-none"
-                            placeholder="Enter Password"
-                        />
-                    </div>
+                {error && <p className="text-red-500 text-sm font-bold mb-4">{error}</p>}
 
-                    {error && <p className="text-red-500 text-sm text-center font-bold">{error}</p>}
-
-                    <button
-                        type="submit"
-                        className="w-full bg-stone-900 text-white py-3 rounded-lg font-bold hover:bg-stone-800 transition-colors"
-                    >
-                        Login
-                    </button>
-                </form>
+                <button
+                    onClick={handleGoogleLogin}
+                    className="w-full bg-stone-900 text-white py-3 rounded-lg font-bold hover:bg-stone-800 transition-colors flex items-center justify-center gap-2"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" />
+                    </svg>
+                    Sign in with Google
+                </button>
 
                 <div className="mt-6 text-center">
                     <button

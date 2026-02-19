@@ -12,7 +12,7 @@ import { useEffect } from "react";
 import { UI_TEXT } from "@/data/translations";
 import { useLanguage } from "@/context/LanguageContext";
 import { SubscriptionManager } from "@/components/profile/SubscriptionManager";
-import { SharedGallery } from "@/components/profile/SharedGallery";
+
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth();
@@ -88,45 +88,49 @@ export default function ProfilePage() {
 
             <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
 
-                {/* Header */}
-                <ProfileHeader />
+                <div className="grid lg:grid-cols-12 gap-8 items-start">
+                    {/* Left Column: Profile & Subscription (3/12 = 25%) */}
+                    <div className="lg:col-span-3 space-y-6">
+                        <ProfileHeader />
+                        {profile && <SubscriptionManager profile={profile} />}
+                    </div>
 
-                {/* Subscription Management */}
-                {profile && <SubscriptionManager profile={profile} />}
+                    {/* Right Column: Stats & Others (9/12 = 75%) */}
+                    <div className="lg:col-span-9 space-y-10">
+                        {/* Stats (Row 1) */}
+                        <OverallStats allProgress={allProgress} profile={profile} />
 
-                {/* Stats */}
-                <OverallStats allProgress={allProgress} profile={profile} />
+                        {/* My Series (Row 2) */}
+                        <div className="space-y-6">
+                            <h2 className="text-2xl font-serif font-bold text-stone-900 pl-2 border-l-4 border-amber-400">
+                                My Series
+                            </h2>
 
-                {/* Shared Gallery */}
-                <SharedGallery />
-
-                {/* My Series */}
-                <div className="space-y-6">
-                    <h2 className="text-2xl font-serif font-bold text-stone-900 pl-2 border-l-4 border-amber-400">
-                        My Series
-                    </h2>
-
-                    {mySeries.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {mySeries.map(series => (
-                                <SeriesProgressCard
-                                    key={series.id}
-                                    series={series}
-                                    progress={allProgress[series.id]}
-                                />
-                            ))}
+                            {mySeries.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {mySeries.map(series => (
+                                        <SeriesProgressCard
+                                            key={series.id}
+                                            series={series}
+                                            progress={allProgress[series.id]}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-2xl p-8 text-center border border-stone-100 border-dashed">
+                                    <p className="text-stone-500 mb-4">You haven't started any series yet.</p>
+                                    <button
+                                        onClick={() => router.push("/#series")}
+                                        className="bg-stone-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors"
+                                    >
+                                        Browse Series
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    ) : (
-                        <div className="bg-white rounded-2xl p-8 text-center border border-stone-100 border-dashed">
-                            <p className="text-stone-500 mb-4">You haven't started any series yet.</p>
-                            <button
-                                onClick={() => router.push("/#series")}
-                                className="bg-stone-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors"
-                            >
-                                Browse Series
-                            </button>
-                        </div>
-                    )}
+
+
+                    </div>
                 </div>
 
                 {/* All Series Link/Section? Maybe just keep it focused on User's stuff for now. */}

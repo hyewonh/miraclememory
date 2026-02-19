@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
@@ -47,60 +48,59 @@ export default function AdminDashboard() {
         }
     };
 
+    const router = useRouter(); // Add useRouter hook
+
     useEffect(() => {
-        // Check for custom admin cookie
-        const hasAdminCookie = document.cookie.split(';').some((item) => item.trim().startsWith('miracle_admin_token=true'));
-
-        if (!authLoading && !user && !hasAdminCookie) {
-            // Not logged in AND no cookie -> Access Denied
-            setLoading(false);
+        if (!authLoading && !user) {
+            router.push("/admin/login");
             return;
         }
 
-        // Security Check
         const isEmailAllowed = user && ADMIN_EMAILS.includes(user.email || "");
-        if (!isEmailAllowed && !hasAdminCookie) {
+        if (!authLoading && user && !isEmailAllowed) {
             setLoading(false);
             return;
         }
 
-        const fetchData = async () => {
-            try {
-                // Try ordered query first (requires index)
+        if (user && isEmailAllowed) {
+            const fetchData = async () => {
                 try {
-                    const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
-                    const querySnapshot = await getDocs(q);
-                    const usersData = querySnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt)
-                    }));
-                    setUsers(usersData);
-                } catch (indexError: any) {
-                    // Fallback: Fetch all and sort client-side if index is missing
-                    console.warn("Index missing, falling back to client-side sort:", indexError);
-                    const q = query(collection(db, "users"));
-                    const querySnapshot = await getDocs(q);
-                    const usersData = querySnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt || Date.now())
-                    }));
-                    // Sort desc
-                    usersData.sort((a: any, b: any) => b.createdAt - a.createdAt);
-                    setUsers(usersData);
+                    // Try ordered query first (requires index)
+                    try {
+                        const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
+                        const querySnapshot = await getDocs(q);
+                        const usersData = querySnapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data(),
+                            createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt)
+                        }));
+                        setUsers(usersData);
+                    } catch (indexError: any) {
+                        // Fallback: Fetch all and sort client-side if index is missing
+                        console.warn("Index missing, falling back to client-side sort");
+                        const q = query(collection(db, "users"));
+                        const querySnapshot = await getDocs(q);
+                        const usersData = querySnapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data(),
+                            createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt || Date.now())
+                        }));
+                        // Sort desc
+                        usersData.sort((a: any, b: any) => b.createdAt - a.createdAt);
+                        setUsers(usersData);
+                    }
+                } catch (error: any) {
+                    console.error("Error fetching users:", error);
+                    if (error?.code === 'permission-denied') {
+                        // Silent failure or toast could be added here
+                    }
+                } finally {
+                    setLoading(false);
                 }
-            } catch (error: any) {
-                console.error("Error fetching users:", error);
-                if (error?.code === 'permission-denied') {
-                    console.warn("Firestore permission denied.");
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
+            };
 
-        fetchData();
+            fetchData();
+        }
 
         // Safety timeout: If Firestore hangs (offline/issues), stop loading after 3s so user can see UI
         const timer = setTimeout(() => {
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
         }, 3000);
 
         return () => clearTimeout(timer);
-    }, [user, authLoading]);
+    }, [user, authLoading, router]);
 
     // Delete User Handler
     const handleDeleteUser = async (userId: string) => {
@@ -137,23 +137,28 @@ export default function AdminDashboard() {
 
     if (authLoading || loading) return <div className="min-h-screen flex items-center justify-center">Loading Admin...</div>;
 
-    // Check auth again for render
-    const hasAdminCookie = typeof document !== 'undefined' && document.cookie.split(';').some((item) => item.trim().startsWith('miracle_admin_token=true'));
     const isEmailAllowed = user && ADMIN_EMAILS.includes(user.email || "");
 
-    if (!isEmailAllowed && !hasAdminCookie) {
+    if (!isEmailAllowed) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center space-y-6">
                 <h1 className="text-2xl font-bold text-stone-800">Access Denied</h1>
-                <p className="text-stone-500">You do not have permission to view this page.</p>
+                <p className="text-stone-500">You do not have permission to view this page. ({user?.email})</p>
 
                 <div className="flex gap-4">
                     <Link href="/" className="text-stone-900 underline hover:text-stone-600">
                         Return Home
                     </Link>
-                    <Link href="/admin/login" className="bg-stone-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-stone-700 transition-colors">
-                        Admin Login
-                    </Link>
+                    <button
+                        onClick={async () => {
+                            const { auth } = await import("@/lib/firebase");
+                            await auth.signOut();
+                            router.push('/admin/login');
+                        }}
+                        className="bg-stone-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-stone-700 transition-colors"
+                    >
+                        Switch Account
+                    </button>
                 </div>
             </div>
         );

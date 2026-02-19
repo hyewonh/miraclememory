@@ -10,6 +10,7 @@ interface SubscriptionManagerProps {
 
 export function SubscriptionManager({ profile }: SubscriptionManagerProps) {
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     if (!profile.isPremium) return null;
 
@@ -31,52 +32,51 @@ export function SubscriptionManager({ profile }: SubscriptionManagerProps) {
     }
 
     return (
-        <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-xl font-serif font-bold text-stone-900 flex items-center gap-2">
-                        Subscription
-                        <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider">
-                            {profile.subscriptionStatus === 'active' ? 'Active' : 'Premium'}
-                        </span>
-                    </h2>
-                    {isTrialActive && (
-                        <p className="text-stone-500 text-sm mt-1">
-                            Trial ends in <span className="font-bold text-amber-600">{daysLeft} days</span>
-                        </p>
+        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+            {/* Header / Accordion Trigger */}
+            <div
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-6 flex items-center justify-between cursor-pointer hover:bg-stone-50 transition-colors"
+            >
+                <h2 className="text-xl font-serif font-bold text-stone-900">
+                    Subscription
+                </h2>
+                <div className="text-stone-400">
+                    {isExpanded ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                    ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                     )}
                 </div>
             </div>
 
-            <div className="bg-stone-50 rounded-xl p-4 border border-stone-100 text-sm space-y-3">
-                <div className="flex justify-between items-center text-stone-600">
-                    <span>Plan</span>
-                    <span className="font-bold text-stone-900">Kingdom Partner</span>
-                </div>
-                {profile.subscriptionId && (
-                    <div className="flex justify-between items-center text-stone-600">
-                        <span>Subscription ID</span>
-                        <span className="font-mono text-xs">{profile.subscriptionId}</span>
+            {/* Trial Info (Always Visible if active?) - User said "Initially invisible", but trial info is critical. 
+                Let's put trial info IN the header if it's important, or inside. 
+                User said "Content of the second box... initially hidden". 
+                I'll put everything else inside.
+            */}
+
+            {isExpanded && (
+                <div className="px-6 pb-6 animate-in slide-in-from-top-2 fade-in duration-200">
+                    {isTrialActive && (
+                        <div className="mb-4 text-sm text-stone-500">
+                            Trial ends in <span className="font-bold text-amber-600">{daysLeft} days</span>
+                        </div>
+                    )}
+
+                    <div className="pt-2">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsCancelModalOpen(true);
+                            }}
+                            className="text-stone-400 hover:text-red-600 underline decoration-stone-300 hover:decoration-red-200 transition-all font-medium text-sm"
+                        >
+                            Cancel Subscription
+                        </button>
                     </div>
-                )}
-            </div>
-
-            <div className="border-t border-stone-100 pt-4 space-y-4">
-                <div className="bg-red-50 text-red-800 p-4 rounded-xl text-sm leading-relaxed border border-red-100">
-                    <strong>Cancellation Policy:</strong>
-                    <ul className="list-disc pl-4 mt-1 space-y-1 opacity-90">
-                        <li>Cancel <strong>before your 7-day trial ends</strong> to avoid being charged.</li>
-                        <li>Payments made after the 7-day trial are <strong>non-refundable</strong>.</li>
-                    </ul>
                 </div>
-
-                <button
-                    onClick={() => setIsCancelModalOpen(true)}
-                    className="block w-full text-center py-3 rounded-xl border border-stone-300 text-stone-600 font-bold hover:bg-stone-50 hover:text-stone-900 transition-colors flex items-center justify-center gap-2"
-                >
-                    Cancel Subscription
-                </button>
-            </div>
+            )}
 
             <CancelSubscriptionModal
                 isOpen={isCancelModalOpen}
