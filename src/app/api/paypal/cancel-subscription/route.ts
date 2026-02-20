@@ -17,9 +17,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
         }
 
-        // We use Live endpoint since the client id is a Live ID. 
-        // If testing in sandbox, you would switch this to api-m.sandbox.paypal.com
-        const isLive = clientId.startsWith("Ac") || clientId.startsWith("Ad") || !clientId.startsWith("A"); // Naive check, but we know user is using live
         const baseUrl = "https://api-m.paypal.com";
 
         // 1. Get access token
@@ -41,7 +38,25 @@ export async function POST(request: Request) {
 
         const { access_token } = await tokenResponse.json();
 
-        // 2. Cancel the subscription
+        // 2. Check current subscription status first
+        const statusResponse = await fetch(`${baseUrl}/v1/billing/subscriptions/${subscriptionId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (statusResponse.ok) {
+            const subData = await statusResponse.json();
+            // If already cancelled/expired on PayPal side, treat as success
+            if (subData.status === 'CANCELLED' || subData.status === 'EXPIRED') {
+                console.log(`Subscription ${subscriptionId} is already ${subData.status} on PayPal — treating as success.`);
+                return NextResponse.json({ success: true, alreadyCancelled: true });
+            }
+        }
+
+        // 3. Cancel the subscription
         const cancelResponse = await fetch(`${baseUrl}/v1/billing/subscriptions/${subscriptionId}/cancel`, {
             method: 'POST',
             headers: {
@@ -60,6 +75,10 @@ export async function POST(request: Request) {
         } else {
             const errorData = await cancelResponse.json().catch(() => ({}));
             console.error("PayPal cancel response:", cancelResponse.status, errorData);
+            // If PayPal says status is invalid (already cancelled), still treat as success
+            if (errorData.name === 'SUBSCRIPTION_STATUS_INVALID') {
+                return NextResponse.json({ success: true, alreadyCancelled: true });
+            }
             return NextResponse.json({ error: errorData.message || "Failed to cancel subscription" }, { status: 400 });
         }
 
