@@ -76,13 +76,8 @@ export function SubscriptionManager({ profile }: SubscriptionManagerProps) {
             {isExpanded && (
                 <div className="px-6 pb-6 animate-in slide-in-from-top-2 fade-in duration-200">
                     {effectiveStatus === 'canceled' ? (
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 bg-stone-100 text-stone-500 text-xs font-semibold px-3 py-1 rounded-full">
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                    Subscription Canceled
-                                </span>
-                            </div>
+                        <div className="space-y-2">
+                            <p className="text-stone-500 font-bold text-sm">Subscription Canceled</p>
                             <p className="text-sm text-stone-400">
                                 Your access remains active until the end of your current billing period.
                             </p>

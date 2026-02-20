@@ -16,9 +16,9 @@ export function ProfileHeader() {
     const initial = user.displayName ? user.displayName.charAt(0).toUpperCase() : "U";
 
     return (
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-stone-100 flex flex-col items-center gap-4 text-center">
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-stone-100 flex flex-col items-center gap-3 text-center w-full">
             {/* Avatar */}
-            <div className="w-32 h-32 rounded-full bg-stone-100 flex items-center justify-center text-5xl font-serif font-bold text-stone-400 border-4 border-white shadow-lg relative">
+            <div className="w-20 h-20 rounded-full bg-stone-100 flex items-center justify-center text-3xl font-serif font-bold text-stone-400 border-4 border-white shadow-md relative">
                 {user.photoURL ? (
                     <img src={user.photoURL} alt={user.displayName || "User"} className="w-full h-full rounded-full object-cover" />
                 ) : (
@@ -36,7 +36,7 @@ export function ProfileHeader() {
                 <h1 className="text-2xl font-serif font-bold text-stone-900">
                     {user.displayName || "User"}
                 </h1>
-                <p className="text-stone-500 text-sm break-all">
+                <p className="text-stone-500 text-sm truncate max-w-full px-2">
                     {user.email}
                 </p>
 
