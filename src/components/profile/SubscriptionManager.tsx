@@ -1,32 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserProfile } from "@/types";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { CancelSubscriptionModal } from "./CancelSubscriptionModal";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 interface SubscriptionManagerProps {
     profile: UserProfile;
 }
 
 export function SubscriptionManager({ profile }: SubscriptionManagerProps) {
+    const { user } = useAuth();
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    // Use local status state so we can update it from PayPal sync without page reload
+    const [effectiveStatus, setEffectiveStatus] = useState(profile.subscriptionStatus);
 
     if (!profile.isPremium) return null;
+
+    // On mount: sync from PayPal if we have a subscriptionId
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+        if (!profile.subscriptionId || !user) return;
+        // Only sync if Firestore shows active (might be stale after a manual PayPal cancel)
+        if (profile.subscriptionStatus === 'canceled') return;
+
+        fetch("/api/paypal/subscription-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subscriptionId: profile.subscriptionId }),
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'canceled' && profile.subscriptionStatus !== 'canceled') {
+                    // PayPal says cancelled but Firestore is stale — sync it
+                    setEffectiveStatus('canceled');
+                    updateDoc(doc(db, "users", user.uid), { subscriptionStatus: 'canceled' }).catch(console.error);
+                }
+            })
+            .catch(() => { /* silent fail — don't disrupt UI */ });
+    }, [profile.subscriptionId]);
 
     // Calculate trial details
     const trialStart = profile.trialStartDate ? new Date(profile.trialStartDate) : null;
     const today = new Date();
-
-    // Check if within 7 days
     let daysLeft = 0;
     let isTrialActive = false;
 
     if (trialStart) {
         const diffTime = Math.abs(today.getTime() - trialStart.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        // Logic: if start was today, diff is ~0. If start was yesterday, diff is 1.
-        // Trial is 7 days.
         daysLeft = 7 - diffDays;
         isTrialActive = daysLeft >= 0;
     }
@@ -50,37 +73,49 @@ export function SubscriptionManager({ profile }: SubscriptionManagerProps) {
                 </div>
             </div>
 
-            {/* Trial Info (Always Visible if active?) - User said "Initially invisible", but trial info is critical. 
-                Let's put trial info IN the header if it's important, or inside. 
-                User said "Content of the second box... initially hidden". 
-                I'll put everything else inside.
-            */}
-
             {isExpanded && (
                 <div className="px-6 pb-6 animate-in slide-in-from-top-2 fade-in duration-200">
-                    {isTrialActive && (
-                        <div className="mb-4 text-sm text-stone-500">
-                            Trial ends in <span className="font-bold text-amber-600">{daysLeft} days</span>
+                    {effectiveStatus === 'canceled' ? (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1.5 bg-stone-100 text-stone-500 text-xs font-semibold px-3 py-1 rounded-full">
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    Subscription Canceled
+                                </span>
+                            </div>
+                            <p className="text-sm text-stone-400">
+                                Your access remains active until the end of your current billing period.
+                            </p>
                         </div>
+                    ) : (
+                        <>
+                            {isTrialActive && (
+                                <div className="mb-4 text-sm text-stone-500">
+                                    Trial ends in <span className="font-bold text-amber-600">{daysLeft} days</span>
+                                </div>
+                            )}
+                            <div className="pt-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsCancelModalOpen(true);
+                                    }}
+                                    className="text-stone-400 hover:text-red-600 underline decoration-stone-300 hover:decoration-red-200 transition-all font-medium text-sm"
+                                >
+                                    Cancel Subscription
+                                </button>
+                            </div>
+                        </>
                     )}
-
-                    <div className="pt-2">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsCancelModalOpen(true);
-                            }}
-                            className="text-stone-400 hover:text-red-600 underline decoration-stone-300 hover:decoration-red-200 transition-all font-medium text-sm"
-                        >
-                            Cancel Subscription
-                        </button>
-                    </div>
                 </div>
             )}
 
             <CancelSubscriptionModal
                 isOpen={isCancelModalOpen}
-                onClose={() => setIsCancelModalOpen(false)}
+                onClose={() => {
+                    setIsCancelModalOpen(false);
+                    setEffectiveStatus('canceled'); // Update local state immediately after cancel
+                }}
                 profile={profile}
             />
         </div>

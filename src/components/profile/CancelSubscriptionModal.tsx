@@ -60,7 +60,7 @@ export function CancelSubscriptionModal({ isOpen, onClose, profile }: CancelSubs
                 throw new Error(errorData.error || "Failed to cancel subscription.");
             }
 
-            // Update user status
+            // Update Firestore regardless of whether it was already cancelled
             const userRef = doc(db, "users", user.uid);
             await updateDoc(userRef, {
                 subscriptionStatus: 'canceled'

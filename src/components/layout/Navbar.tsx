@@ -36,7 +36,7 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
     return (
         <>
             <nav className={cn(
-                "w-full max-w-7xl px-6 py-6 flex items-center justify-between z-50 transition-all duration-300 mx-auto",
+                "w-full max-w-7xl px-6 py-6 flex items-center justify-between z-50 transition-all duration-300 mx-auto relative",
                 isAbsolute ? "absolute top-0 left-1/2 -translate-x-1/2 text-stone-900" : "relative",
                 className
             )}>
@@ -51,19 +51,19 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                 </button>
 
                 {/* Left: Language Selector (Desktop Only) */}
-                <div className="hidden md:block justify-self-start">
+                <div className="hidden md:block">
                     <LanguageSelector />
                 </div>
 
-                {/* Center: Logo (Absolute Center for Mobile, Normal for Desktop) */}
-                <div className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:text-center">
-                    <Link href="/" className="text-xl md:text-2xl font-sans font-bold tracking-[0.1em] text-stone-900 uppercase whitespace-nowrap hover:opacity-80 transition-opacity">
+                {/* Center: Logo — absolutely centered so left/right widths don't affect it */}
+                <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
+                    <Link href="/" className="pointer-events-auto text-xl md:text-2xl font-sans font-bold tracking-[0.1em] text-stone-900 uppercase whitespace-nowrap hover:opacity-80 transition-opacity">
                         Miracle Memory
                     </Link>
                 </div>
 
                 {/* Right: User Menu (Desktop Only) */}
-                <div className="hidden md:flex items-center gap-4 justify-self-end">
+                <div className="hidden md:flex items-center gap-4 ml-auto">
                     {user ? (
                         <div className="flex items-center gap-4">
                             <Link href="/profile" className="font-medium text-stone-900 flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -88,9 +88,10 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                     )}
                 </div>
 
-                {/* Mobile: Placeholder for Right side balance (if needed) or Icon */}
-                <div className="md:hidden w-8"></div> {/* Spacer to balance hamburger */}
+                {/* Mobile: Placeholder for Right side balance */}
+                <div className="md:hidden w-8"></div>
             </nav>
+
 
             {/* Mobile Sidebar Menu (Overlay) */}
             {isMenuOpen && (
