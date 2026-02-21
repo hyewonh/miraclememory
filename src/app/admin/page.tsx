@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, where, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -299,10 +299,16 @@ export default function AdminDashboard() {
                                 setActiveTab('promoCodes');
                                 setPromoLoading(true);
                                 try {
-                                    const res = await fetch(`/api/admin/generate-promo?adminEmail=${user?.email}`);
-                                    const data = await res.json();
-                                    if (data.success) setPromoHistory(data.codes);
-                                } catch { }
+                                    const q = query(collection(db, 'admin_promo_codes'), orderBy('createdAt', 'desc'));
+                                    const snap = await getDocs(q);
+                                    setPromoHistory(snap.docs.map(d => ({
+                                        code: d.id,
+                                        ...d.data(),
+                                        createdAt: d.data().createdAt?.toDate?.()?.toISOString() ?? d.data().createdAt,
+                                        expiresAt: d.data().expiresAt?.toDate?.()?.toISOString() ?? d.data().expiresAt,
+                                        usedAt: d.data().usedAt?.toDate?.()?.toISOString() ?? d.data().usedAt,
+                                    })));
+                                } catch (e) { console.error('load promo codes:', e); }
                                 setPromoLoading(false);
                             }}
                             className={`px-3 py-1 rounded-full ${activeTab === 'promoCodes' ? 'bg-rose-600 text-white' : 'hover:bg-stone-100'}`}
@@ -642,28 +648,47 @@ export default function AdminDashboard() {
                                 onClick={async () => {
                                     setPromoLoading(true);
                                     try {
-                                        const res = await fetch('/api/admin/generate-promo', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({
-                                                adminEmail: user?.email,
+                                        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                                        const genCode = () => {
+                                            let r = '';
+                                            for (let i = 0; i < 8; i++) {
+                                                if (i === 4) r += '-';
+                                                r += chars[Math.floor(Math.random() * chars.length)];
+                                            }
+                                            return r;
+                                        };
+
+                                        const expiresAt = new Date();
+                                        expiresAt.setDate(expiresAt.getDate() + promoExpiryDays);
+
+                                        const newCodes: string[] = [];
+                                        for (let i = 0; i < promoCount; i++) {
+                                            const code = genCode();
+                                            await setDoc(doc(db, 'admin_promo_codes', code), {
                                                 type: promoType,
-                                                count: promoCount,
+                                                used: false,
+                                                usedBy: null,
+                                                usedAt: null,
+                                                createdAt: serverTimestamp(),
+                                                expiresAt,
+                                                createdBy: user?.email ?? 'admin',
                                                 note: promoNote,
-                                                expiryDays: promoExpiryDays,
-                                            }),
-                                        });
-                                        const data = await res.json();
-                                        if (data.success) {
-                                            setGeneratedCodes(data.codes);
-                                            // Refresh history
-                                            const res2 = await fetch(`/api/admin/generate-promo?adminEmail=${user?.email}`);
-                                            const data2 = await res2.json();
-                                            if (data2.success) setPromoHistory(data2.codes);
-                                        } else {
-                                            alert('Error: ' + data.error);
+                                            });
+                                            newCodes.push(code);
                                         }
-                                    } catch (e: any) { alert(e.message); }
+                                        setGeneratedCodes(newCodes);
+
+                                        // Refresh history
+                                        const q = query(collection(db, 'admin_promo_codes'), orderBy('createdAt', 'desc'));
+                                        const snap = await getDocs(q);
+                                        setPromoHistory(snap.docs.map(d => ({
+                                            code: d.id,
+                                            ...d.data(),
+                                            createdAt: d.data().createdAt?.toDate?.()?.toISOString() ?? d.data().createdAt,
+                                            expiresAt: d.data().expiresAt?.toDate?.()?.toISOString() ?? d.data().expiresAt,
+                                            usedAt: d.data().usedAt?.toDate?.()?.toISOString() ?? d.data().usedAt,
+                                        })));
+                                    } catch (e: any) { console.error(e); alert('Error: ' + e.message); }
                                     setPromoLoading(false);
                                 }}
                                 className="bg-rose-500 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-rose-600 transition-colors disabled:opacity-50"
@@ -733,8 +758,8 @@ export default function AdminDashboard() {
                                                     <td className="p-4 font-mono font-bold text-stone-800">{c.code}</td>
                                                     <td className="p-4">
                                                         <span className={`px-2 py-1 rounded text-xs font-bold ${c.type === 'lifetime' ? 'bg-purple-100 text-purple-700' :
-                                                                c.type === '1year' ? 'bg-amber-100 text-amber-700' :
-                                                                    'bg-blue-100 text-blue-700'
+                                                            c.type === '1year' ? 'bg-amber-100 text-amber-700' :
+                                                                'bg-blue-100 text-blue-700'
                                                             }`}>
                                                             {c.type === '1month' ? '1 Month' : c.type === '1year' ? '1 Year' : 'Lifetime'}
                                                         </span>
