@@ -71,7 +71,7 @@ export default function RewardsPage() {
 
     function copyReferralLink() {
         if (!profile) return;
-        const link = `${window.location.origin}/join?ref=${profile.referralCode}`;
+        const link = `${window.location.origin}/join/${profile.referralCode}`;
         navigator.clipboard.writeText(link);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -89,7 +89,7 @@ export default function RewardsPage() {
         return <div className="min-h-screen flex items-center justify-center text-stone-500">Profile not found</div>;
     }
 
-    const referralLink = `${typeof window !== "undefined" ? window.location.origin : "https://miraclememory.org"}/join?ref=${profile.referralCode}`;
+    const referralLink = `${typeof window !== "undefined" ? window.location.origin : "https://miraclememory.org"}/join/${profile.referralCode}`;
     const nextMilestone = POINT_THRESHOLDS.find(t => t.points > profile.points);
     const progressToNext = nextMilestone
         ? Math.round((profile.points / nextMilestone.points) * 100)
