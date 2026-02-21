@@ -24,5 +24,19 @@ service cloud.firestore {
     match /user_progress/{progressId} {
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
+    match /referrals/{code} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    match /admin_promo_codes/{code} {
+      // Anyone logged in can read a code (to check validity)
+      allow read: if request.auth != null;
+      // Users can update (mark as used) but only via client — admin can write freely
+      allow write: if request.auth != null && 
+        (request.auth.token.email in ["hyewonh@gmail.com"] ||
+         // Allow users to mark a code as used (usedBy must be their own uid)
+         (request.resource.data.used == true && request.resource.data.usedBy == request.auth.uid));
+    }
   }
 }

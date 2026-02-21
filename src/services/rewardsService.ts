@@ -214,13 +214,62 @@ export async function issuePromoCode(
 }
 
 // ─────────────────────────────────────────────────
-// Apply a promo code — returns premium duration granted
+// Apply a promo code — checks both user-owned and admin-global codes
 // ─────────────────────────────────────────────────
 export async function applyPromoCode(
     uid: string,
     code: string
 ): Promise<{ success: boolean; type?: PromoCode["type"]; error?: string }> {
-    const codeRef = doc(db, "promo_codes", code.toUpperCase());
+    const upperCode = code.toUpperCase();
+
+    // 1. Check admin_promo_codes first (global — anyone can use once)
+    const adminCodeRef = doc(db, "admin_promo_codes", upperCode);
+    const adminSnap = await getDoc(adminCodeRef);
+
+    if (adminSnap.exists()) {
+        const data = adminSnap.data();
+
+        if (data.used) return { success: false, error: "Code already used" };
+        if (data.expiresAt?.toDate() < new Date()) return { success: false, error: "Code has expired" };
+
+        // Mark as used
+        await updateDoc(adminCodeRef, {
+            used: true,
+            usedBy: uid,
+            usedAt: serverTimestamp(),
+        });
+
+        // Apply premium
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        const currentExpiry: Date | null = userSnap.data()?.premiumExpiresAt?.toDate() ?? null;
+
+        let newExpiry: Date | null = null;
+        const now = new Date();
+        const base = currentExpiry && currentExpiry > now ? currentExpiry : now;
+
+        if (data.type === "lifetime") {
+            newExpiry = null;
+        } else if (data.type === "1year") {
+            newExpiry = new Date(base);
+            newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+        } else if (data.type === "1month") {
+            newExpiry = new Date(base);
+            newExpiry.setMonth(newExpiry.getMonth() + 1);
+        }
+
+        await updateDoc(userRef, {
+            isPremium: true,
+            subscriptionStatus: "active",
+            premiumExpiresAt: newExpiry,
+            freeAccessNote: `Admin promo code: ${upperCode}`,
+        });
+
+        return { success: true, type: data.type as PromoCode["type"] };
+    }
+
+    // 2. Check user-owned promo_codes
+    const codeRef = doc(db, "promo_codes", upperCode);
     const snap = await getDoc(codeRef);
 
     if (!snap.exists()) return { success: false, error: "Invalid code" };
@@ -244,7 +293,7 @@ export async function applyPromoCode(
     const base = currentExpiry && currentExpiry > now ? currentExpiry : now;
 
     if (data.type === "lifetime") {
-        newExpiry = null; // null = lifetime
+        newExpiry = null;
     } else if (data.type === "1year") {
         newExpiry = new Date(base);
         newExpiry.setFullYear(newExpiry.getFullYear() + 1);
@@ -260,6 +309,7 @@ export async function applyPromoCode(
 
     return { success: true, type: data.type };
 }
+
 
 // ─────────────────────────────────────────────────
 // Credit referrer on subscription paid

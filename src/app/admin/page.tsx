@@ -20,7 +20,17 @@ export default function AdminDashboard() {
     const { user, loading: authLoading } = useAuth();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'subscriptions'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'subscriptions' | 'promoCodes'>('overview');
+
+    // Promo Code Generator State
+    const [promoType, setPromoType] = useState<'1month' | '1year' | 'lifetime'>('1month');
+    const [promoCount, setPromoCount] = useState(1);
+    const [promoNote, setPromoNote] = useState('');
+    const [promoExpiryDays, setPromoExpiryDays] = useState(365);
+    const [generatedCodes, setGeneratedCodes] = useState<string[]>([]);
+    const [promoHistory, setPromoHistory] = useState<any[]>([]);
+    const [promoLoading, setPromoLoading] = useState(false);
+    const [promoCopied, setPromoCopied] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<any>(null); // For Detail Modal
 
     // Search & Filter State
@@ -283,6 +293,21 @@ export default function AdminDashboard() {
                             className={`px-3 py-1 rounded-full ${activeTab === 'subscriptions' ? 'bg-stone-900 text-white' : 'hover:bg-stone-100'}`}
                         >
                             Subscriptions
+                        </button>
+                        <button
+                            onClick={async () => {
+                                setActiveTab('promoCodes');
+                                setPromoLoading(true);
+                                try {
+                                    const res = await fetch(`/api/admin/generate-promo?adminEmail=${user?.email}`);
+                                    const data = await res.json();
+                                    if (data.success) setPromoHistory(data.codes);
+                                } catch { }
+                                setPromoLoading(false);
+                            }}
+                            className={`px-3 py-1 rounded-full ${activeTab === 'promoCodes' ? 'bg-rose-600 text-white' : 'hover:bg-stone-100'}`}
+                        >
+                            🎁 Promo Codes
                         </button>
                         <Link href="/" className="px-3 py-1 hover:bg-stone-100 rounded-full text-stone-500">
                             Exit
@@ -565,6 +590,174 @@ export default function AdminDashboard() {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                )}
+                {/* 4. PROMO CODES TAB */}
+                {activeTab === 'promoCodes' && (
+                    <div className="space-y-6 animate-in fade-in">
+                        {/* Generator Card */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+                            <h3 className="text-lg font-bold mb-4">🎁 Generate Promo Codes</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">Type</label>
+                                    <select
+                                        value={promoType}
+                                        onChange={e => setPromoType(e.target.value as any)}
+                                        className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    >
+                                        <option value="1month">1 Month Free</option>
+                                        <option value="1year">1 Year Free</option>
+                                        <option value="lifetime">Lifetime</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">Count</label>
+                                    <input
+                                        type="number" min={1} max={50} value={promoCount}
+                                        onChange={e => setPromoCount(Number(e.target.value))}
+                                        className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">Valid Days</label>
+                                    <input
+                                        type="number" min={7} max={3650} value={promoExpiryDays}
+                                        onChange={e => setPromoExpiryDays(Number(e.target.value))}
+                                        className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-stone-500 mb-1 uppercase tracking-wider">Note (optional)</label>
+                                    <input
+                                        type="text" value={promoNote} placeholder="e.g. Church event"
+                                        onChange={e => setPromoNote(e.target.value)}
+                                        className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    />
+                                </div>
+                            </div>
+                            <button
+                                disabled={promoLoading}
+                                onClick={async () => {
+                                    setPromoLoading(true);
+                                    try {
+                                        const res = await fetch('/api/admin/generate-promo', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                adminEmail: user?.email,
+                                                type: promoType,
+                                                count: promoCount,
+                                                note: promoNote,
+                                                expiryDays: promoExpiryDays,
+                                            }),
+                                        });
+                                        const data = await res.json();
+                                        if (data.success) {
+                                            setGeneratedCodes(data.codes);
+                                            // Refresh history
+                                            const res2 = await fetch(`/api/admin/generate-promo?adminEmail=${user?.email}`);
+                                            const data2 = await res2.json();
+                                            if (data2.success) setPromoHistory(data2.codes);
+                                        } else {
+                                            alert('Error: ' + data.error);
+                                        }
+                                    } catch (e: any) { alert(e.message); }
+                                    setPromoLoading(false);
+                                }}
+                                className="bg-rose-500 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-rose-600 transition-colors disabled:opacity-50"
+                            >
+                                {promoLoading ? 'Generating...' : `Generate ${promoCount} Code${promoCount > 1 ? 's' : ''}`}
+                            </button>
+                        </div>
+
+                        {/* Newly Generated Codes */}
+                        {generatedCodes.length > 0 && (
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
+                                <h4 className="font-bold text-emerald-800 mb-3">✅ Generated — Copy & Send These Codes</h4>
+                                <div className="space-y-2">
+                                    {generatedCodes.map(code => (
+                                        <div key={code} className="flex items-center justify-between bg-white rounded-xl px-4 py-3 border border-emerald-200">
+                                            <span className="font-mono font-bold text-stone-800 text-lg tracking-widest">{code}</span>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(code);
+                                                    setPromoCopied(code);
+                                                    setTimeout(() => setPromoCopied(null), 1500);
+                                                }}
+                                                className={`text-xs font-bold px-3 py-1 rounded-lg transition-all ${promoCopied === code ? 'bg-emerald-500 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                                    }`}
+                                            >
+                                                {promoCopied === code ? '✅ Copied!' : 'Copy'}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        const allCodes = generatedCodes.join('\n');
+                                        navigator.clipboard.writeText(allCodes);
+                                        alert('All codes copied!');
+                                    }}
+                                    className="mt-3 text-sm text-emerald-700 font-bold underline hover:text-emerald-900"
+                                >
+                                    Copy All
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Code History */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+                            <div className="p-4 border-b border-stone-100">
+                                <h4 className="font-bold text-stone-800">All Promo Codes ({promoHistory.length})</h4>
+                            </div>
+                            {promoLoading ? (
+                                <div className="p-8 text-center text-stone-400">Loading...</div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="bg-stone-50 text-stone-500 text-xs font-bold uppercase tracking-wider">
+                                            <tr>
+                                                <th className="p-4">Code</th>
+                                                <th className="p-4">Type</th>
+                                                <th className="p-4">Status</th>
+                                                <th className="p-4">Used By</th>
+                                                <th className="p-4">Note</th>
+                                                <th className="p-4">Expires</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-stone-100">
+                                            {promoHistory.map((c: any) => (
+                                                <tr key={c.code} className="hover:bg-stone-50">
+                                                    <td className="p-4 font-mono font-bold text-stone-800">{c.code}</td>
+                                                    <td className="p-4">
+                                                        <span className={`px-2 py-1 rounded text-xs font-bold ${c.type === 'lifetime' ? 'bg-purple-100 text-purple-700' :
+                                                                c.type === '1year' ? 'bg-amber-100 text-amber-700' :
+                                                                    'bg-blue-100 text-blue-700'
+                                                            }`}>
+                                                            {c.type === '1month' ? '1 Month' : c.type === '1year' ? '1 Year' : 'Lifetime'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        {c.used ? (
+                                                            <span className="px-2 py-1 bg-stone-100 text-stone-400 rounded text-xs font-bold">Used</span>
+                                                        ) : (
+                                                            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-bold">Available</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-4 text-stone-500 text-xs font-mono">{c.usedBy ? c.usedBy.slice(0, 8) + '...' : '—'}</td>
+                                                    <td className="p-4 text-stone-500 text-xs">{c.note || '—'}</td>
+                                                    <td className="p-4 text-stone-500 text-xs">{c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : '—'}</td>
+                                                </tr>
+                                            ))}
+                                            {promoHistory.length === 0 && (
+                                                <tr><td colSpan={6} className="p-8 text-center text-stone-400 italic">No promo codes yet.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
