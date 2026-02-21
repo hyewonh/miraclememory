@@ -298,15 +298,42 @@ export async function onSubscriptionConversion(referredUid: string): Promise<voi
 }
 
 // ─────────────────────────────────────────────────
-// Load user reward profile
+// Load user reward profile (auto-creates referralCode if missing)
 // ─────────────────────────────────────────────────
 export async function getUserRewardProfile(uid: string): Promise<UserRewardProfile | null> {
-    const snap = await getDoc(doc(db, "users", uid));
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
     if (!snap.exists()) return null;
     const d = snap.data();
+
+    let referralCode: string = d.referralCode ?? "";
+
+    // Auto-generate referralCode for existing users who don't have one yet
+    if (!referralCode) {
+        referralCode = generateUniqueCode(8);
+
+        // Save to Firestore user doc
+        await setDoc(userRef, {
+            referralCode,
+            referredBy: d.referredBy ?? null,
+            points: d.points ?? 0,
+            tier: d.tier ?? "friend",
+            referralSignups: d.referralSignups ?? 0,
+            referralConversions: d.referralConversions ?? 0,
+        }, { merge: true });
+
+        // Create referrals lookup entry
+        await setDoc(doc(db, "referrals", referralCode), {
+            ownerUid: uid,
+            signups: 0,
+            conversions: 0,
+            createdAt: serverTimestamp(),
+        });
+    }
+
     return {
         uid,
-        referralCode: d.referralCode ?? "",
+        referralCode,
         referredBy: d.referredBy ?? null,
         points: d.points ?? 0,
         tier: d.tier ?? "friend",
