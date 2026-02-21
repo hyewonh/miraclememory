@@ -488,7 +488,7 @@ export function OnboardingModal({ isOpen, onClose, startAtPayment = false }: Onb
                                     <div className="absolute top-0 right-0 bg-stone-100 text-stone-500 text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
                                         7 Days Free
                                     </div>
-                                    <h3 className="text-lg font-serif font-bold text-stone-800 mb-1">Kingdom Partner</h3>
+                                    <h3 className="text-lg font-serif font-bold text-stone-800 mb-1">Premium Supporter</h3>
                                     <div className="flex items-baseline gap-1 mb-2">
                                         <span className="text-3xl font-bold text-stone-900">$7.99</span>
                                         <span className="text-stone-500 font-medium">/mo</span>

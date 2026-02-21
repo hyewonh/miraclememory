@@ -47,7 +47,9 @@ export function useAllProgress() {
                         en: completedVerses.en || [],
                         ko: completedVerses.ko || [],
                         zh: completedVerses.zh || [],
-                        es: completedVerses.es || []
+                        es: completedVerses.es || [],
+                        de: completedVerses.de || [],
+                        fr: completedVerses.fr || []
                     },
                     isCompleted: data.isCompleted || false,
                     lastUpdated: data.lastUpdated || Date.now()

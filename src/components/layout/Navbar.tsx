@@ -71,6 +71,12 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                                     {UI_TEXT.nav.greeting[language]}, {user.displayName?.split(" ")[0]}
                                 </span>
                             </Link>
+                            <Link href="/bible" className="text-sm font-medium text-stone-600 hover:text-amber-600 flex items-center gap-1 transition-colors">
+                                {UI_TEXT.nav.bible[language]}
+                            </Link>
+                            <Link href="/rewards" className="text-sm font-medium text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors">
+                                {UI_TEXT.nav.rewards[language]}
+                            </Link>
                             <button
                                 onClick={() => logout()}
                                 className="bg-stone-100 text-stone-600 px-5 py-2 rounded-full text-xs md:text-sm font-medium hover:bg-stone-200 transition-colors"
@@ -129,10 +135,16 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                                         </div>
 
                                         <button onClick={() => handleLinkClick("/profile")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
-                                            My Profile
+                                            {UI_TEXT.nav.myProfile[language]}
+                                        </button>
+                                        <button onClick={() => handleLinkClick("/bible")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
+                                            {UI_TEXT.nav.bible[language]}
+                                        </button>
+                                        <button onClick={() => handleLinkClick("/rewards")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-rose-500 transition-colors">
+                                            {UI_TEXT.nav.inviteFriends[language]}
                                         </button>
                                         <button onClick={() => handleLinkClick("/profile")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
-                                            Manage Subscription
+                                            {UI_TEXT.nav.manageSubscription[language]}
                                         </button>
 
                                     </>
@@ -142,11 +154,8 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                                             onClick={() => { setIsMenuOpen(false); setIsAuthModalOpen(true); }}
                                             className="w-full bg-stone-900 text-white py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors"
                                         >
-                                            Sign In
+                                            {UI_TEXT.nav.signIn[language]}
                                         </button>
-                                        <div className="text-center text-sm text-stone-500">
-                                            New here? <button onClick={() => { setIsMenuOpen(false); setIsOnboardingOpen(true); }} className="text-amber-600 font-bold underline">Create Account</button>
-                                        </div>
                                     </div>
                                 )}
                             </div>

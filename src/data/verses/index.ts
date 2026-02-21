@@ -20,6 +20,8 @@ import { PETER_VERSES } from "./peter";
 import { JAMES_VERSES } from "./james";
 import { JOHN_EPISTLES_VERSES } from "./john_epistles";
 import { REVELATION_VERSES } from "./revelation";
+import { LENT_VERSES } from "./lent";
+
 
 export const ALL_VERSES: Verse[] = [
     ...ROMANS_VERSES,
@@ -41,5 +43,6 @@ export const ALL_VERSES: Verse[] = [
     ...PETER_VERSES,
     ...JAMES_VERSES,
     ...JOHN_EPISTLES_VERSES,
-    ...REVELATION_VERSES
+    ...REVELATION_VERSES,
+    ...LENT_VERSES
 ];

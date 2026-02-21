@@ -138,7 +138,7 @@ export function CancelSubscriptionModal({ isOpen, onClose, profile }: CancelSubs
                                     If you cancel now, you will lose access to premium features and your progress tracking history after your current period ends.
                                 </p>
                                 <div className="bg-stone-50 p-4 rounded-xl text-left border border-stone-100">
-                                    <h5 className="font-bold text-stone-800 text-sm mb-2">Kingdom Partner Benefits you'll lose:</h5>
+                                    <h5 className="font-bold text-stone-800 text-sm mb-2">Premium Supporter Benefits you'll lose:</h5>
                                     <ul className="text-sm text-stone-600 space-y-1 list-disc pl-4">
                                         <li>Unlimited Audio Recording</li>
                                         <li>Unlimited Verse Access</li>

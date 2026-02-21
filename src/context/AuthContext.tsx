@@ -13,6 +13,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
+import { initializeUserRewards } from "@/services/rewardsService";
 
 interface AuthContextType {
     user: User | null;
@@ -58,6 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     name: result.user.displayName,
                     lastLogin: new Date().toISOString()
                 }, { merge: true });
+
+                // Initialize referral profile (idempotent — safe to call every login)
+                const pendingRef = localStorage.getItem("pendingReferralCode") ?? undefined;
+                await initializeUserRewards(result.user.uid, pendingRef);
+                if (pendingRef) localStorage.removeItem("pendingReferralCode");
             } catch (e) {
                 console.error("Error updating Google user in Firestore:", e);
             }
@@ -94,10 +100,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     isPremium: false,
                     survey: {}
                 });
+
+                // Initialize referral profile & apply pending referral code if any
+                const pendingRef = typeof localStorage !== "undefined"
+                    ? localStorage.getItem("pendingReferralCode") ?? undefined
+                    : undefined;
+                await initializeUserRewards(userCredential.user.uid, pendingRef);
+                if (pendingRef) localStorage.removeItem("pendingReferralCode");
             } catch (dbError) {
                 console.error("Error creating user profile in Firestore:", dbError);
                 // We don't throw here, because the Auth account was created successfully.
-                // We might want to try again later or log it.
             }
         } catch (error: any) {
             console.error("Error signing up:", error);

@@ -25,7 +25,7 @@ export function Pricing() {
                     <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
                         7 DAYS FREE
                     </div>
-                    <h3 className="text-2xl font-serif font-bold text-stone-800 mb-2">Kingdom Partner</h3>
+                    <h3 className="text-2xl font-serif font-bold text-stone-800 mb-2">Premium Supporter</h3>
                     <div className="text-5xl font-bold text-stone-900 mb-2">$7.99<span className="text-lg text-stone-400 font-normal">/mo</span></div>
                     <p className="text-stone-500 text-sm mb-8">Price of a meal 🍱</p>
 

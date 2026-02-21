@@ -16,6 +16,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSelector } from "@/components/layout/LanguageSelector";
 import { UI_TEXT } from "@/data/translations";
 import { Navbar } from "@/components/layout/Navbar";
+import { UserDashboard } from "@/components/layout/UserDashboard";
 
 export default function Home() {
   const { user, logout } = useAuth();
@@ -50,10 +51,17 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 w-full flex flex-col items-center justify-start pb-20 animate-in fade-in duration-700">
 
-        {/* Hero Section */}
+        {/* Hero Section (non-logged in) */}
         {!user && (
           <div className="w-full mb-12">
             <Hero onStartTrial={() => setIsOnboardingOpen(true)} language={language} />
+          </div>
+        )}
+
+        {/* User Dashboard (logged-in users) */}
+        {user && (
+          <div className="w-full mb-10 mt-6">
+            <UserDashboard />
           </div>
         )}
 
@@ -69,20 +77,24 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {INITIAL_SERIES.map((series, idx) => {
-              // First 4 are free (0, 1, 2, 3). 4+ are locked.
-              const isLocked = idx >= 4 && !isPremium;
+            {INITIAL_SERIES
+              .filter((series) => series.id !== "revelation-30")
+              .map((series) => {
+                // Free users: romans, healing, gospel, lent are open (4 free verses each)
+                // Premium users: all series unlocked
+                const FREE_SERIES = ["romans-30", "healing-100", "gospel-3-months", "lent-30"];
+                const isLocked = !FREE_SERIES.includes(series.id) && !isPremium;
 
-              return (
-                <SeriesCard
-                  key={series.id}
-                  series={series}
-                  language={language}
-                  isLocked={isLocked}
-                  onUnlock={() => setIsOnboardingOpen(true)}
-                />
-              );
-            })}
+                return (
+                  <SeriesCard
+                    key={series.id}
+                    series={series}
+                    language={language}
+                    isLocked={isLocked}
+                    onUnlock={() => setIsOnboardingOpen(true)}
+                  />
+                );
+              })}
           </div>
         </div>
 

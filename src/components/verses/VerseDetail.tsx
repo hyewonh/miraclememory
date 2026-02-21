@@ -2,11 +2,13 @@
 
 import { Verse } from "@/types";
 import { useState, useRef, useEffect } from "react";
+import { useLiveBibleText } from "@/hooks/useLiveBibleText";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/hooks/useProgress";
 import html2canvas from "html2canvas";
 import { format } from "date-fns";
 import { VerseShareCard } from "./VerseShareCard";
+import { InlineTypeTest } from "./InlineTypeTest";
 import { db, storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, getDoc, setDoc, addDoc, collection } from "firebase/firestore";
@@ -23,6 +25,13 @@ interface VerseDetailProps {
 export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequired }: VerseDetailProps) {
     const { user } = useAuth();
     const { isMemorized, toggleVerseMemorized } = useProgress(verse.seriesId);
+
+    // Live Bible text — API-fetched with IndexedDB cache, falls back to hard-coded
+    const { text: liveText } = useLiveBibleText({
+        reference: verse.reference.en,
+        language,
+        fallback: verse.text[language],
+    });
     // ... existing code ...
 
     const handleRecordClick = () => {
@@ -62,9 +71,15 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
     const [targetLoops, setTargetLoops] = useState(1); // 1, 10, or infinity
     const [playbackRate, setPlaybackRate] = useState(1.0);
     const [testMode, setTestMode] = useState(false);
+    const [typeTestMode, setTypeTestMode] = useState(false);
+    const [typedInput, setTypedInput] = useState("");
+    const [volume, setVolume] = useState(1.0);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const gainNodeRef = useRef<GainNode | null>(null);
+    const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
     const shareCardRef = useRef<HTMLDivElement>(null);
     const [shareTheme, setShareTheme] = useState<string>("");
     const [wasSaved, setWasSaved] = useState(false);
@@ -110,6 +125,9 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
         setAudioUrl(null);
         setIsPlaying(false);
         setLoopCount(0);
+        setTestMode(false); // Reset Test Mode on verse change
+        setTypeTestMode(false); // Reset Type Test Mode on verse change
+        setTypedInput("");
 
         // Load existing recording if user is logged in
         if (user && verse.id) {
@@ -140,7 +158,14 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-            const mediaRecorder = new MediaRecorder(stream);
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : 'audio/webm';
+
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType,
+                audioBitsPerSecond: 24000, // 24 kbps — speech-optimized, ~180KB/min
+            });
             mediaRecorderRef.current = mediaRecorder;
 
             const chunks: BlobPart[] = [];
@@ -212,21 +237,32 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
         if (isPlaying) {
             audioRef.current.pause();
-            // setIsPlaying(false) handled by onPause
         } else {
+            // Set up AudioContext GainNode for volume control (only once per audio element)
+            if (!audioContextRef.current) {
+                const ctx = new AudioContext();
+                const gain = ctx.createGain();
+                gain.gain.value = volume;
+                audioContextRef.current = ctx;
+                gainNodeRef.current = gain;
+            }
+            // Connect source -> gain -> output (only if not already connected)
+            if (!sourceNodeRef.current && audioRef.current && audioContextRef.current) {
+                const source = audioContextRef.current.createMediaElementSource(audioRef.current);
+                source.connect(gainNodeRef.current!);
+                gainNodeRef.current!.connect(audioContextRef.current.destination);
+                sourceNodeRef.current = source;
+            }
+            if (audioContextRef.current?.state === 'suspended') {
+                audioContextRef.current.resume();
+            }
             setLoopCount(0);
             audioRef.current.play().catch(error => {
                 console.error("Playback failed:", error);
                 setIsPlaying(false);
             });
-            // setIsPlaying(true) handled by onPlay
         }
     };
-    // ... (skip lines 80-180) -> wait I cannot skip lines in replacement content unless I use multi-replace.
-    // I will use multi-replace to target specific blocks. 
-    // Step 1: Update startRecording and togglePlayback
-    // Step 2: Update Play Button CSS
-    // Step 3: Update Audio src
 
 
     const handleEnded = () => {
@@ -245,18 +281,18 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
         return text.split(' ').map((word, idx) => {
             if (word.length === 0) return <span key={idx}> </span>;
             const firstChar = word.charAt(0);
-            // Replace rest with underscore and style lighter
-            // Using underscore looks like a blank line
-            const maskedLength = word.length - 1;
-            const masked = "_".repeat(maskedLength);
+            const hiddenCount = word.length - 1;
 
             return (
-                <span key={idx} className="inline-block whitespace-pre">
+                <span key={idx} className="inline-flex items-center whitespace-pre gap-[2px]">
                     <span className="text-stone-900">{firstChar}</span>
-                    {maskedLength > 0 && (
-                        <span className="text-stone-300 tracking-wider pl-[1px]">{masked}</span>
-                    )}
-                    {/* Add space after word */}
+                    {Array.from({ length: hiddenCount }).map((_, i) => (
+                        <span
+                            key={i}
+                            className="inline-block rounded-full bg-stone-300"
+                            style={{ width: '0.55em', height: '0.55em' }}
+                        />
+                    ))}
                     {" "}
                 </span>
             );
@@ -401,6 +437,13 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
         }
     }, [playbackRate]);
 
+    // Update GainNode when volume changes
+    useEffect(() => {
+        if (gainNodeRef.current) {
+            gainNodeRef.current.gain.value = volume;
+        }
+    }, [volume]);
+
     return (
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-stone-200/60 max-w-4xl mx-auto my-8 relative">
             {/* Memorized Badge (Visual only if memorized) */}
@@ -419,9 +462,20 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                     <div className="text-sm font-bold tracking-widest text-primary uppercase mb-2">
                         Memorize This Verse
                     </div>
-                    <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed min-h-[4rem] flex flex-wrap justify-center items-center">
-                        {testMode ? getMaskedText(verse.text[language]) : verse.text[language]}
-                    </div>
+                    {/* Verse Text — or InlineTypeTest when active */}
+                    {typeTestMode ? (
+                        <InlineTypeTest
+                            text={liveText}
+                            onClose={() => {
+                                setTypeTestMode(false);
+                                setTypedInput("");
+                            }}
+                        />
+                    ) : (
+                        <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed min-h-[4rem] flex flex-wrap justify-center items-center">
+                            {testMode ? getMaskedText(liveText) : liveText}
+                        </div>
+                    )}
                     <p className="text-lg text-rose-900 mt-4 font-serif italic font-medium">
                         — {verse.reference[language]}
                     </p>
@@ -479,6 +533,26 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
                                 {/* Settings */}
                                 <div className="flex flex-wrap justify-center gap-4 mt-6">
+                                    {/* Volume Slider */}
+                                    <div className="flex flex-col items-center gap-2">
+                                        <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Volume</label>
+                                        <div className="flex items-center gap-2 h-12">
+                                            <svg className="w-4 h-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072" />
+                                            </svg>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.05"
+                                                value={volume}
+                                                onChange={(e) => setVolume(Number(e.target.value))}
+                                                className="w-24 accent-amber-500 cursor-pointer"
+                                                title={`Volume: ${Math.round(volume * 100)}%`}
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="flex flex-col items-center gap-2">
                                         <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Repeats</label>
                                         <select
@@ -493,34 +567,47 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                         </select>
                                     </div>
 
-                                    <div className="flex flex-col items-center gap-2">
-                                        <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Speed</label>
-                                        <select
-                                            value={playbackRate}
-                                            onChange={(e) => setPlaybackRate(Number(e.target.value))}
-                                            className="h-12 px-4 rounded-xl border-2 border-stone-200 bg-white text-stone-800 font-bold text-base focus:border-amber-500 outline-none cursor-pointer hover:border-amber-300 transition-colors"
-                                        >
-                                            <option value={1.0}>1.0x</option>
-                                            <option value={0.75}>0.75x</option>
-                                            <option value={0.5}>0.5x</option>
-                                        </select>
-                                    </div>
+
 
                                     <div className="flex flex-col items-center gap-2">
                                         <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Test</label>
                                         <button
-                                            onClick={() => setTestMode(!testMode)}
+                                            onClick={() => {
+                                                setTestMode(prev => !prev);
+                                                setTypeTestMode(false);
+                                                setTypedInput("");
+                                            }}
                                             className={cn(
-                                                "h-12 px-6 rounded-xl border-2 font-bold text-base transition-all",
+                                                "h-12 px-6 rounded-xl border-2 font-bold text-sm tracking-wide transition-all shadow-sm",
                                                 testMode
-                                                    ? "bg-amber-100 border-amber-300 text-amber-800"
-                                                    : "bg-white border-stone-200 text-stone-400 hover:border-amber-300"
+                                                    ? "bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-200"
+                                                    : "bg-stone-100 border-stone-300 text-stone-600 hover:bg-amber-50 hover:border-amber-400 hover:text-amber-700"
                                             )}
                                         >
-                                            {testMode ? 'ON' : 'OFF'}
+                                            {testMode ? '● ON' : '○ OFF'}
+                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-col items-center gap-2">
+                                        <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Type Test</label>
+                                        <button
+                                            onClick={() => {
+                                                setTypeTestMode(prev => !prev);
+                                                setTestMode(false);
+                                                setTypedInput("");
+                                            }}
+                                            className={cn(
+                                                "h-12 px-6 rounded-xl border-2 font-bold text-sm tracking-wide transition-all shadow-sm",
+                                                typeTestMode
+                                                    ? "bg-rose-500 border-rose-500 text-white shadow-md shadow-rose-200"
+                                                    : "bg-stone-100 border-stone-300 text-stone-600 hover:bg-rose-50 hover:border-rose-400 hover:text-rose-700"
+                                            )}
+                                        >
+                                            {typeTestMode ? '● ON' : '○ OFF'}
                                         </button>
                                     </div>
                                 </div>
+
                             </div>
                         )}
 
@@ -540,6 +627,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                 </div>
 
                 {/* Action Buttons: Mark as Memorized & Share */}
+
                 <div className="flex items-center justify-center gap-4 pt-4 border-t border-stone-100">
                     <button
                         onClick={handleMemorizeClick}

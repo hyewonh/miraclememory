@@ -3,56 +3,35 @@ import { ALL_VERSES } from "./verses";
 
 export const INITIAL_SERIES: Series[] = [
     {
-        id: "one-year-series",
+        id: "romans-30",
         title: {
-            en: "1-Year Scripture Series",
-            ko: "1년 암송 시리즈",
-            zh: "1年圣经背诵",
-            es: "Memoria Bíblica de 1 Año",
-            de: "1-Jahres-Bibelgedächtnis",
-            fr: "Mémoire Biblique d'1 An"
+            en: "Romans: 30 Key Verses",
+            ko: "로마서 핵심 30구절",
+            zh: "罗马书核心30句",
+            es: "Romanos: 30 Versículos Clave",
+            de: "Römer: 30 Schlüsselverse",
+            fr: "Romains: 30 Versets Clés"
         },
         description: {
-            en: "A comprehensive journey through the entire Bible.",
-            ko: "성경 전체를 아우르는 1년 간의 여정.",
-            zh: "穿越整本圣经的全面旅程。",
-            es: "Un viaje integral a través de toda la Biblia.",
-            de: "Eine umfassende Reise durch die gesamte Bibel.",
-            fr: "Un voyage complet à travers toute la Bible."
+            en: "Master the logic of salvation through 30 key verses from Romans.",
+            ko: "구원의 논리를 로마서 30구절로 마스터하세요.",
+            zh: "通过罗马书30句关键经文掌握救恩的逻辑。",
+            es: "Domina la lógica de la salvación a través de 30 versículos clave de Romanos.",
+            de: "Meistere die Logik der Erlösung durch 30 Schlüsselverse aus dem Römerbrief.",
+            fr: "Maîtrisez la logique du salut à travers 30 versets clés des Romains."
         },
-        totalVerses: 365,
-        coverImage: "/images/one-year.jpg"
-    },
-    {
-        id: "gospel-3-months",
-        title: {
-            en: "3-Month Gospel Series",
-            ko: "3개월 복음서 암송 시리즈",
-            zh: "3个月福音书背诵",
-            es: "Memoria del Evangelio de 3 Meses",
-            de: "3-Monate-Evangelium-Gedächtnis",
-            fr: "Mémoire de l'Évangile de 3 Mois"
-        },
-        description: {
-            en: "Walk with Jesus through the Gospels in 90 days.",
-            ko: "90일 동안 복음서를 통해 예수님과 동행하세요.",
-            zh: "90天通过福音书与耶稣同行。",
-            es: "Camina con Jesús a través de los Evangelios en 90 días.",
-            de: "Geh mit Jesus durch die Evangelien in 90 Tagen.",
-            fr: "Marchez avec Jésus à travers les Évangiles en 90 jours."
-        },
-        totalVerses: 90,
-        coverImage: "/images/nature.jpg"
+        totalVerses: 30,
+        coverImage: "/images/romans.jpg"
     },
     {
         id: "healing-100",
         title: {
-            en: "Healing Verses 100",
-            ko: "치유 성경암송 100구절 시리즈",
+            en: "Healing Word: 100 Verses",
+            ko: "치유의 말씀 100구절",
             zh: "医治经文100句",
-            es: "Versículos de Sanidad 100",
-            de: "Heilungsverse 100",
-            fr: "Versets de Guérison 100"
+            es: "Palabra de Sanidad: 100 Versículos",
+            de: "Heilungswort: 100 Verse",
+            fr: "Parole de Guérison: 100 Versets"
         },
         description: {
             en: "God's promises for physical, emotional, and spiritual healing.",
@@ -66,35 +45,77 @@ export const INITIAL_SERIES: Series[] = [
         coverImage: "/images/healing.jpg"
     },
     {
-        id: "romans-30",
+        id: "gospel-3-months",
         title: {
-            en: "Romans Core 30",
-            ko: "로마서 핵심 30구절 암송시리즈",
-            zh: "罗马书核心30句",
-            es: "Romanos Núcleo 30",
-            de: "Römer Kern 30",
-            fr: "Romains Noyau 30"
+            en: "Gospels: 90 Key Verses",
+            ko: "복음서 핵심 90구절",
+            zh: "福音书核心90句",
+            es: "Evangelios: 90 Versículos Clave",
+            de: "Evangelien: 90 Schlüsselverse",
+            fr: "Évangiles: 90 Versets Clés"
         },
         description: {
-            en: "Master of salvation through 30 key verses from Romans.",
-            ko: "구원의 논리를 로마서 30구절로 마스터하세요.",
-            zh: "通过罗马书30句关键经文掌握救恩的逻辑。",
-            es: "Domina la lógica de la salvación a través de 30 versículos clave de Romanos.",
-            de: "Meistere die Logik der Erlösung durch 30 Schlüsselverse aus dem Römerbrief.",
-            fr: "Maîtrisez la logique du salut à travers 30 versets clés des Romains."
+            en: "Walk with Jesus through the Gospels in 90 days.",
+            ko: "90일 동안 복음서를 통해 예수님과 동행하세요.",
+            zh: "90天通过福音书与耶稣同行。",
+            es: "Camina con Jesús a través de los Evangelios en 90 días.",
+            de: "Geh mit Jesus durch die Evangelien in 90 Tagen.",
+            fr: "Marchez avec Jésus à travers les Évangiles en 90 jours."
+        },
+        totalVerses: 90,
+        coverImage: "/images/nature.jpg"
+    },
+    {
+        id: "lent-30",
+        title: {
+            en: "Lent: 30 Key Verses",
+            ko: "사순절 핵심 30구절",
+            zh: "四旬节核心30句",
+            es: "Cuaresma: 30 Versículos Clave",
+            de: "Fastenzeit: 30 Schlüsselverse",
+            fr: "Carême: 30 Versets Clés"
+        },
+        description: {
+            en: "Meditate on Christ's path to the cross and discover His love during Lent.",
+            ko: "주님의 십자가의 길을 묵상하며 그 사랑을 깨닫는 기간",
+            zh: "在四旬节期间，默想基督走向十字架的道路，体会祂的爱。",
+            es: "Medita en el camino de Cristo hacia la cruz y descubre Su amor durante la Cuaresma.",
+            de: "Meditiere in der Fastenzeit über den Weg Christi zum Kreuz und entdecke Seine Liebe.",
+            fr: "Méditez sur le chemin du Christ vers la croix et découvrez Son amour pendant le Carême."
         },
         totalVerses: 30,
-        coverImage: "/images/romans.jpg"
+        coverImage: "/images/lent.jpg"
+    },
+    {
+        id: "one-year-series",
+        title: {
+            en: "1-Year Scripture Series",
+            ko: "1년 성경암송 시리즈",
+            zh: "1年圣经背诵系列",
+            es: "Serie de Memoria Bíblica de 1 Año",
+            de: "1-Jahres-Bibelgedächtnis-Serie",
+            fr: "Série de Mémoire Biblique d'1 An"
+        },
+        description: {
+            en: "A comprehensive journey through the entire Bible.",
+            ko: "성경 전체를 아우르는 1년 간의 여정.",
+            zh: "穿越整本圣经的全面旅程。",
+            es: "Un viaje integral a través de toda la Biblia.",
+            de: "Eine umfassende Reise durch die gesamte Bibel.",
+            fr: "Un voyage complet à travers toute la Bible."
+        },
+        totalVerses: 365,
+        coverImage: "/images/one-year.jpg"
     },
     {
         id: "prayer-series",
         title: {
-            en: "Prayer Bible Verses",
+            en: "Prayer Scripture Series",
             ko: "기도 성경암송 시리즈",
             zh: "祷告经文系列",
-            es: "Versículos Bíblicos de Oración",
-            de: "Gebetsbibelverse",
-            fr: "Versets Bibliques sur la Prière"
+            es: "Serie de Escrituras de Oración",
+            de: "Gebets-Bibelvers-Serie",
+            fr: "Série de Versets sur la Prière"
         },
         description: {
             en: "Deepen your prayer life with the Word.",
@@ -110,12 +131,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "faith-30",
         title: {
-            en: "Faith Verses 30",
-            ko: "믿음의 말씀 30구절 시리즈",
-            zh: "信心经文30句",
-            es: "Versículos de Fe 30",
-            de: "Glaubensverse 30",
-            fr: "Versets de Foi 30"
+            en: "Faith Word: 30 Verses",
+            ko: "믿음의 말씀 30구절",
+            zh: "信心之道30句",
+            es: "Palabra de Fe: 30 Versículos",
+            de: "Glaubenswort: 30 Verse",
+            fr: "Parole de Foi: 30 Versets"
         },
         description: {
             en: "Strengthen your faith with these powerful verses.",
@@ -131,12 +152,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "holyspirit-30",
         title: {
-            en: "Holy Spirit Verses 30",
-            ko: "성령 말씀암송 30구절 시리즈",
-            zh: "圣灵经文30句",
-            es: "Versículos del Espíritu Santo 30",
-            de: "Heiliger Geist Verse 30",
-            fr: "Versets du Saint-Esprit 30"
+            en: "Holy Spirit Word: 30 Verses",
+            ko: "성령의 말씀 30구절",
+            zh: "圣灵之道30句",
+            es: "Palabra del Espíritu Santo: 30 Versículos",
+            de: "Heiliger-Geist-Wort: 30 Verse",
+            fr: "Parole du Saint-Esprit: 30 Versets"
         },
         description: {
             en: "Walk in step with the Holy Spirit.",
@@ -152,12 +173,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "selfesteem-30",
         title: {
-            en: "Self-Esteem Verses 30",
-            ko: "자존감회복 30구절 시리즈",
-            zh: "自尊经文30句",
-            es: "Versículos de Autoestima 30",
-            de: "Selbstwertgefühl Verse 30",
-            fr: "Versets sur l'Estime de Soi 30"
+            en: "Self-Esteem Recovery: 30 Verses",
+            ko: "자존감 회복 30구절",
+            zh: "自尊恢复30句",
+            es: "Recuperación de Autoestima: 30 Versículos",
+            de: "Selbstwert-Wiederherstellung: 30 Verse",
+            fr: "Restauration de l'Estime de Soi: 30 Versets"
         },
         description: {
             en: "Find your true identity and worth in Christ.",
@@ -173,12 +194,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "acts-30",
         title: {
-            en: "Acts Core 30",
+            en: "Acts: 30 Key Verses",
             ko: "사도행전 핵심 30구절",
             zh: "使徒行传核心30句",
-            es: "Hechos Núcleo 30",
-            de: "Apostelgeschichte Kern 30",
-            fr: "Actes Noyau 30"
+            es: "Hechos: 30 Versículos Clave",
+            de: "Apostelgeschichte: 30 Schlüsselverse",
+            fr: "Actes: 30 Versets Clés"
         },
         description: {
             en: "The birth of the church and the spread of the Gospel.",
@@ -194,12 +215,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "corinthians-30",
         title: {
-            en: "Corinthians Core 30",
-            ko: "고린도서 핵심 30구절",
-            zh: "哥林多书核心30句",
-            es: "Corintios Núcleo 30",
-            de: "Korinther Kern 30",
-            fr: "Corinthiens Noyau 30"
+            en: "1 Corinthians: 30 Key Verses",
+            ko: "고린도전서 핵심 30구절",
+            zh: "哥林多前书核心30句",
+            es: "1 Corintios: 30 Versículos Clave",
+            de: "1. Korinther: 30 Schlüsselverse",
+            fr: "1 Corinthiens: 30 Versets Clés"
         },
         description: {
             en: "Wisdom for church life and spiritual gifts.",
@@ -215,12 +236,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "galatians-30",
         title: {
-            en: "Galatians Core 30",
+            en: "Galatians: 30 Key Verses",
             ko: "갈라디아서 핵심 30구절",
             zh: "加拉太书核心30句",
-            es: "Gálatas Núcleo 30",
-            de: "Galater Kern 30",
-            fr: "Galates Noyau 30"
+            es: "Gálatas: 30 Versículos Clave",
+            de: "Galater: 30 Schlüsselverse",
+            fr: "Galates: 30 Versets Clés"
         },
         description: {
             en: "Freedom in Christ and the fruit of the Spirit.",
@@ -236,12 +257,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "ephesians-30",
         title: {
-            en: "Ephesians Core 30",
+            en: "Ephesians: 30 Key Verses",
             ko: "에베소서 핵심 30구절",
             zh: "以弗所书核心30句",
-            es: "Efesios Núcleo 30",
-            de: "Epheser Kern 30",
-            fr: "Éphésiens Noyau 30"
+            es: "Efesios: 30 Versículos Clave",
+            de: "Epheser: 30 Schlüsselverse",
+            fr: "Éphésiens: 30 Versets Clés"
         },
         description: {
             en: "The church as the body of Christ and spiritual armor.",
@@ -257,12 +278,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "philippians-30",
         title: {
-            en: "Philippians Core 30",
+            en: "Philippians: 30 Key Verses",
             ko: "빌립보서 핵심 30구절",
             zh: "腓立比书核心30句",
-            es: "Filipenses Núcleo 30",
-            de: "Philipper Kern 30",
-            fr: "Philippiens Noyau 30"
+            es: "Filipenses: 30 Versículos Clave",
+            de: "Philipper: 30 Schlüsselverse",
+            fr: "Philippiens: 30 Versets Clés"
         },
         description: {
             en: "Joy in suffering and the mind of Christ.",
@@ -278,12 +299,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "colossians-30",
         title: {
-            en: "Colossians Core 30",
+            en: "Colossians: 30 Key Verses",
             ko: "골로새서 핵심 30구절",
             zh: "歌罗西书核心30句",
-            es: "Colosenses Núcleo 30",
-            de: "Kolosser Kern 30",
-            fr: "Colossiens Noyau 30"
+            es: "Colosenses: 30 Versículos Clave",
+            de: "Kolosser: 30 Schlüsselverse",
+            fr: "Colossiens: 30 Versets Clés"
         },
         description: {
             en: "The supremacy and sufficiency of Christ.",
@@ -299,12 +320,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "pastoral-30",
         title: {
-            en: "Pastoral Epistles Core 30",
+            en: "Pastoral Epistles: 30 Key Verses",
             ko: "목회서신 핵심 30구절",
             zh: "教牧书信核心30句",
-            es: "Epístolas Pastorales Núcleo 30",
-            de: "Pastoralbriefe Kern 30",
-            fr: "Épîtres Pastorales Noyau 30"
+            es: "Epístolas Pastorales: 30 Versículos Clave",
+            de: "Pastoralbriefe: 30 Schlüsselverse",
+            fr: "Épîtres Pastorales: 30 Versets Clés"
         },
         description: {
             en: "Leadership, godliness, and sound doctrine.",
@@ -320,12 +341,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "hebrews-30",
         title: {
-            en: "Hebrews Core 30",
+            en: "Hebrews: 30 Key Verses",
             ko: "히브리서 핵심 30구절",
             zh: "希伯来书核心30句",
-            es: "Hebreos Núcleo 30",
-            de: "Hebräer Kern 30",
-            fr: "Hébreux Noyau 30"
+            es: "Hebreos: 30 Versículos Clave",
+            de: "Hebräer: 30 Schlüsselverse",
+            fr: "Hébreux: 30 Versets Clés"
         },
         description: {
             en: "Jesus is greater than all.",
@@ -341,12 +362,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "peter-30",
         title: {
-            en: "Peter Core 30",
+            en: "Peter: 30 Key Verses",
             ko: "베드로서 핵심 30구절",
             zh: "彼得书信核心30句",
-            es: "Pedro Núcleo 30",
-            de: "Petrus Kern 30",
-            fr: "Pierre Noyau 30"
+            es: "Pedro: 30 Versículos Clave",
+            de: "Petrus: 30 Schlüsselverse",
+            fr: "Pierre: 30 Versets Clés"
         },
         description: {
             en: "Hope in suffering and holy living.",
@@ -362,12 +383,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "james-30",
         title: {
-            en: "James Core 30",
+            en: "James: 30 Key Verses",
             ko: "야고보서 핵심 30구절",
             zh: "雅各书核心30句",
-            es: "Santiago Núcleo 30",
-            de: "Jakobus Kern 30",
-            fr: "Jacques Noyau 30"
+            es: "Santiago: 30 Versículos Clave",
+            de: "Jakobus: 30 Schlüsselverse",
+            fr: "Jacques: 30 Versets Clés"
         },
         description: {
             en: "Faith without works is dead.",
@@ -383,12 +404,12 @@ export const INITIAL_SERIES: Series[] = [
     {
         id: "john-epistles-30",
         title: {
-            en: "John Epistles Core 30",
-            ko: "요한1,2,3서 핵심 30구절",
+            en: "John Epistles: 30 Key Verses",
+            ko: "요한 1,2,3서 핵심 30구절",
             zh: "约翰书信核心30句",
-            es: "Epístolas de Juan Núcleo 30",
-            de: "Johannesbriefe Kern 30",
-            fr: "Épîtres de Jean Noyau 30"
+            es: "Epístolas de Juan: 30 Versículos Clave",
+            de: "Johannesbriefe: 30 Schlüsselverse",
+            fr: "Épîtres de Jean: 30 Versets Clés"
         },
         description: {
             en: "God is love and light.",
