@@ -232,16 +232,22 @@ export default function ProfilePage() {
                                         />
                                     ))}
                                 </div>
-                                <div className="text-center">
-                                    <Link href="/bible" className="text-sm text-amber-600 hover:text-amber-700 font-medium hover:underline underline-offset-2">
-                                        + 새 시리즈 만들기
-                                    </Link>
+                                <div className="text-center mt-6">
+                                    {profile?.isPremium ? (
+                                        <Link href="/bible" className="text-sm text-stone-600 hover:text-stone-900 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
+                                            + 내 커스텀 시리즈 만들기
+                                        </Link>
+                                    ) : (
+                                        <Link href="/pricing" className="text-sm text-amber-600 hover:text-amber-700 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
+                                            + 내 커스텀 시리즈 만들기 (유료회원 전용)
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         )}
 
-                        {/* Empty state */}
-                        {mySeries.length === 0 && customSeries.length === 0 && (
+                        {/* Empty state and Bottom Create Link */}
+                        {(mySeries.length === 0 && customSeries.length === 0) ? (
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-serif font-bold text-stone-900 pl-2 border-l-4 border-amber-400">
                                     My Series
@@ -255,15 +261,38 @@ export default function ProfilePage() {
                                         >
                                             Browse Series
                                         </button>
-                                        <Link
-                                            href="/bible"
-                                            className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-400 transition-colors text-sm"
-                                        >
-                                            내 시리즈 만들기
-                                        </Link>
+                                        {profile?.isPremium ? (
+                                            <Link
+                                                href="/bible"
+                                                className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-400 transition-colors text-sm"
+                                            >
+                                                내 커스텀 시리즈 만들기
+                                            </Link>
+                                        ) : (
+                                            <Link
+                                                href="/pricing"
+                                                className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-400 transition-colors text-sm"
+                                            >
+                                                내 커스텀 시리즈 만들기 (유료회원 전용)
+                                            </Link>
+                                        )}
                                     </div>
                                 </div>
                             </div>
+                        ) : (
+                            customSeries.length === 0 && (
+                                <div className="pt-8 border-t border-stone-100 text-center">
+                                    {profile?.isPremium ? (
+                                        <Link href="/bible" className="text-sm text-stone-600 hover:text-stone-900 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
+                                            + 내 커스텀 시리즈 만들기
+                                        </Link>
+                                    ) : (
+                                        <Link href="/pricing" className="text-sm text-amber-600 hover:text-amber-700 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
+                                            + 내 커스텀 시리즈 만들기 (유료회원 전용)
+                                        </Link>
+                                    )}
+                                </div>
+                            )
                         )}
                     </div>
                 </div>

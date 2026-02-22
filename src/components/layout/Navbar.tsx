@@ -71,9 +71,6 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                                     {UI_TEXT.nav.greeting[language]}, {user.displayName?.split(" ")[0]}
                                 </span>
                             </Link>
-                            <Link href="/bible" className="text-sm font-medium text-stone-600 hover:text-amber-600 flex items-center gap-1 transition-colors">
-                                내 시리즈
-                            </Link>
                             <Link href="/rewards" className="text-sm font-medium text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors">
                                 {UI_TEXT.nav.rewards[language]}
                             </Link>
@@ -137,14 +134,8 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                                         <button onClick={() => handleLinkClick("/profile")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
                                             {UI_TEXT.nav.myProfile[language]}
                                         </button>
-                                        <button onClick={() => handleLinkClick("/bible")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
-                                            내 시리즈
-                                        </button>
                                         <button onClick={() => handleLinkClick("/rewards")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-rose-500 transition-colors">
                                             {UI_TEXT.nav.inviteFriends[language]}
-                                        </button>
-                                        <button onClick={() => handleLinkClick("/profile")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
-                                            {UI_TEXT.nav.manageSubscription[language]}
                                         </button>
 
                                     </>
