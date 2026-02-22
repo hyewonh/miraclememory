@@ -6,6 +6,8 @@ import {
     onAuthStateChanged,
     GoogleAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
@@ -46,26 +48,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => unsubscribe();
     }, []);
 
+    const handleGoogleSignInResult = async (result: any) => {
+        // Create/Merge Firestore User Document
+        try {
+            // Ensure user doc exists. merge: true avoids overwriting existing data.
+            await setDoc(doc(db, "users", result.user.uid), {
+                email: result.user.email,
+                name: result.user.displayName,
+                lastLogin: new Date().toISOString()
+            }, { merge: true });
+
+            // Initialize referral profile (idempotent — safe to call every login)
+            const pendingRef = localStorage.getItem("pendingReferralCode") ?? undefined;
+            await initializeUserRewards(result.user.uid, pendingRef);
+            if (pendingRef) localStorage.removeItem("pendingReferralCode");
+        } catch (e) {
+            console.error("Error updating Google user in Firestore:", e);
+        }
+    };
+
+    useEffect(() => {
+        getRedirectResult(auth)
+            .then(async (result) => {
+                if (result) {
+                    await handleGoogleSignInResult(result);
+                }
+            })
+            .catch((error) => {
+                console.error("Error from getRedirectResult:", error);
+            });
+    }, []);
+
     const signInWithGoogle = async () => {
         try {
             const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '');
 
-            // Create/Merge Firestore User Document
-            try {
-                // Ensure user doc exists. merge: true avoids overwriting existing data.
-                await setDoc(doc(db, "users", result.user.uid), {
-                    email: result.user.email,
-                    name: result.user.displayName,
-                    lastLogin: new Date().toISOString()
-                }, { merge: true });
-
-                // Initialize referral profile (idempotent — safe to call every login)
-                const pendingRef = localStorage.getItem("pendingReferralCode") ?? undefined;
-                await initializeUserRewards(result.user.uid, pendingRef);
-                if (pendingRef) localStorage.removeItem("pendingReferralCode");
-            } catch (e) {
-                console.error("Error updating Google user in Firestore:", e);
+            if (isMobile) {
+                await signInWithRedirect(auth, provider);
+            } else {
+                const result = await signInWithPopup(auth, provider);
+                await handleGoogleSignInResult(result);
             }
         } catch (error: any) {
             console.error("Error signing in with Google:", error);
