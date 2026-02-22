@@ -74,9 +74,6 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                             <Link href="/bible" className="text-sm font-medium text-stone-600 hover:text-amber-600 flex items-center gap-1 transition-colors">
                                 내 시리즈
                             </Link>
-                            <Link href="/community" className="text-sm font-medium text-stone-600 hover:text-amber-600 flex items-center gap-1 transition-colors">
-                                커뮤니티
-                            </Link>
                             <Link href="/rewards" className="text-sm font-medium text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors">
                                 {UI_TEXT.nav.rewards[language]}
                             </Link>
@@ -142,9 +139,6 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                                         </button>
                                         <button onClick={() => handleLinkClick("/bible")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
                                             내 시리즈
-                                        </button>
-                                        <button onClick={() => handleLinkClick("/community")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-amber-600 transition-colors">
-                                            커뮤니티
                                         </button>
                                         <button onClick={() => handleLinkClick("/rewards")} className="w-full text-left py-3 px-2 text-lg font-medium text-stone-700 border-b border-stone-100 hover:text-rose-500 transition-colors">
                                             {UI_TEXT.nav.inviteFriends[language]}
