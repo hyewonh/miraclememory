@@ -56,8 +56,8 @@ export default function BiblePage() {
     const tl = (obj: Record<string, string>) => obj[language] ?? obj["en"];
 
     const { books, loading: booksLoading } = useBibleIndex();
-    const [selectedBook, setSelectedBook] = useState<string | null>(null);
-    const [selectedChapter, setSelectedChapter] = useState<number | null>(null);
+    const [selectedBook, setSelectedBook] = useState<string | null>("matthew");
+    const [selectedChapter, setSelectedChapter] = useState<number | null>(1);
     const [testament, setTestament] = useState<"OT" | "NT">("NT");
     const [searchQuery, setSearchQuery] = useState("");
     const [showPremiumGate, setShowPremiumGate] = useState(false);
@@ -176,8 +176,8 @@ export default function BiblePage() {
                     {Array.from({ length: bookData.totalChapters }, (_, i) => i + 1).map(ch => (
                         <button key={ch} onClick={() => handleChapterSelect(ch)}
                             className={`py-3 md:py-3.5 rounded-xl md:rounded-none text-sm font-medium transition-all md:px-5 md:text-left md:flex md:items-center md:justify-between ${selectedChapter === ch
-                                    ? "bg-amber-500 text-white md:bg-amber-50 md:text-amber-700"
-                                    : "bg-stone-50 text-stone-600 md:bg-transparent hover:bg-amber-50 md:hover:bg-stone-50"
+                                ? "bg-amber-500 text-white md:bg-amber-50 md:text-amber-700"
+                                : "bg-stone-50 text-stone-600 md:bg-transparent hover:bg-amber-50 md:hover:bg-stone-50"
                                 }`}>
                             {ch}{tl(t.chapterLabel)}
                             <svg className="hidden md:block w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -235,7 +235,6 @@ export default function BiblePage() {
                     })
                 ) : (
                     <div className="h-40 flex flex-col items-center justify-center text-center text-stone-300">
-                        <div className="text-4xl mb-2">📖</div>
                         <p className="text-sm">{tl(t.tapChapter)}</p>
                         {!isPremium && selectedBook && (
                             <button onClick={() => setShowPremiumGate(true)} className="mt-3 text-xs bg-amber-100 text-amber-700 px-4 py-2 rounded-xl font-bold hover:bg-amber-200">
@@ -309,7 +308,6 @@ export default function BiblePage() {
                     <div className="flex-1 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col overflow-hidden">
                         {selectedChapter || searchQuery ? <VerseList /> : (
                             <div className="flex-1 flex flex-col items-center justify-center text-center text-stone-300 gap-2">
-                                <div className="text-5xl">📖</div>
                                 <p className="text-sm">{selectedBook ? tl(t.tapChapter) : tl(t.selectChapter)}</p>
                                 {!isPremium && selectedBook && (
                                     <button onClick={() => setShowPremiumGate(true)} className="mt-2 text-xs bg-amber-100 text-amber-700 px-4 py-2 rounded-xl font-bold hover:bg-amber-200">{tl(t.premiumBadge)}</button>
