@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -11,8 +11,12 @@ import { BookIndex, BOOK_NAMES_KO } from "@/types/bible";
 import { Navbar } from "@/components/layout/Navbar";
 import { CustomVerseRef } from "@/hooks/useCustomSeries";
 import { UI_TEXT } from "@/data/translations";
+import { cn } from "@/lib/utils";
 
 type MobileStep = "books" | "chapters" | "verses";
+
+const MIN_VERSES = 5;
+const GOAL_VERSES = 30;
 
 // ─── Book names per language ─────────────────────────────────────
 const BOOK_NAMES: Record<string, Record<string, string>> = {
@@ -45,6 +49,77 @@ function PremiumLock({ onUpgrade, lang }: { onUpgrade: () => void; lang: string 
     );
 }
 
+// ─── Progress Bar ────────────────────────────────────────────────
+function VerseProgressBar({
+    count,
+    onSave,
+    onClear,
+}: {
+    count: number;
+    onSave: () => void;
+    onClear: () => void;
+}) {
+    const pct = Math.min((count / GOAL_VERSES) * 100, 100);
+    const canSave = count >= MIN_VERSES;
+    const isGoalReached = count >= GOAL_VERSES;
+
+    if (count === 0) return null;
+
+    return (
+        <div className={cn(
+            "sticky top-0 z-20 border-b px-4 py-3 flex flex-col gap-2 transition-colors",
+            isGoalReached
+                ? "bg-emerald-50 border-emerald-200"
+                : "bg-amber-50 border-amber-100"
+        )}>
+            {/* Row 1: count + clear + save */}
+            <div className="flex items-center justify-between gap-3">
+                <span className={cn(
+                    "text-sm font-bold",
+                    isGoalReached ? "text-emerald-700" : "text-amber-700"
+                )}>
+                    {count}/{GOAL_VERSES} 구절 선택됨
+                </span>
+                <div className="flex gap-2 items-center">
+                    <button
+                        onClick={onClear}
+                        className="text-xs text-stone-400 hover:text-stone-600 px-2"
+                    >
+                        초기화
+                    </button>
+                    <button
+                        onClick={onSave}
+                        disabled={!canSave}
+                        className={cn(
+                            "text-xs font-bold px-4 py-1.5 rounded-full transition-all",
+                            canSave
+                                ? isGoalReached
+                                    ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm"
+                                    : "bg-amber-500 hover:bg-amber-400 text-white shadow-sm"
+                                : "bg-stone-200 text-stone-400 cursor-not-allowed"
+                        )}
+                    >
+                        내 시리즈로 저장
+                    </button>
+                </div>
+            </div>
+            {/* Row 2: progress bar */}
+            <div className="h-2 bg-stone-200 rounded-full overflow-hidden">
+                <div
+                    className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        isGoalReached ? "bg-emerald-500" : "bg-amber-500"
+                    )}
+                    style={{ width: `${pct}%` }}
+                />
+            </div>
+            {!canSave && (
+                <p className="text-[10px] text-stone-400 text-right">{MIN_VERSES}구절 이상 선택 시 저장 가능</p>
+            )}
+        </div>
+    );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────
 export default function BiblePage() {
     const router = useRouter();
@@ -59,16 +134,19 @@ export default function BiblePage() {
     const [selectedBook, setSelectedBook] = useState<string | null>("matthew");
     const [selectedChapter, setSelectedChapter] = useState<number | null>(1);
     const [testament, setTestament] = useState<"OT" | "NT">("NT");
-    const [searchQuery, setSearchQuery] = useState("");
     const [showPremiumGate, setShowPremiumGate] = useState(false);
     // Mobile: step-by-step navigation
     const [mobileStep, setMobileStep] = useState<MobileStep>("books");
+
+    // --- scroll refs so verse list doesn't jump back to top ---
+    const verseListRef = useRef<HTMLDivElement>(null);
 
     const { createSeries, addVerse } = useCustomSeries();
     const [selectedVerses, setSelectedVerses] = useState<CustomVerseRef[]>([]);
     const [showSeriesModal, setShowSeriesModal] = useState(false);
     const [newSeriesTitle, setNewSeriesTitle] = useState("");
     const [newSeriesDesc, setNewSeriesDesc] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
 
     const { data: bookData, loading: bookLoading } = useBibleBook(selectedBook);
 
@@ -78,29 +156,16 @@ export default function BiblePage() {
 
     const selectedBookMeta = books.find(b => b.id === selectedBook);
 
-    const searchResults = useMemo(() => {
-        if (!searchQuery.trim() || !bookData) return [];
-        const q = searchQuery.toLowerCase();
-        const results: { ch: number; v: number; text: string }[] = [];
-        Object.entries(bookData.chapters).forEach(([ch, verses]) => {
-            Object.entries(verses).forEach(([v, text]) => {
-                if (text.toLowerCase().includes(q)) results.push({ ch: Number(ch), v: Number(v), text });
-            });
-        });
-        return results.slice(0, 50);
-    }, [searchQuery, bookData]);
-
     const handleBookSelect = (bookId: string) => {
         setSelectedBook(bookId);
         setSelectedChapter(null);
-        setSearchQuery("");
         setMobileStep("chapters");
     };
 
     const handleChapterSelect = (ch: number) => {
         setSelectedChapter(ch);
-        setSearchQuery("");
         setMobileStep("verses");
+        // Do NOT reset scroll — keep current scroll position
     };
 
     const handleVerseToggle = (ch: number, v: number, text: string) => {
@@ -116,16 +181,26 @@ export default function BiblePage() {
                 text: { [language]: text },
                 reference: { [language]: `${bookLabel} ${ch}:${v}` },
             }]);
+            // Don't scroll to top — keep position in verse list
         }
     };
 
     const handleCreateSeries = async () => {
-        if (!newSeriesTitle.trim()) return;
-        const id = await createSeries(newSeriesTitle, newSeriesDesc);
-        if (id) for (const v of selectedVerses) await addVerse(id, v);
-        setSelectedVerses([]); setNewSeriesTitle(""); setNewSeriesDesc("");
-        setShowSeriesModal(false);
-        router.push("/profile");
+        if (!newSeriesTitle.trim() || isSaving) return;
+        setIsSaving(true);
+        try {
+            const id = await createSeries(newSeriesTitle, newSeriesDesc);
+            if (id) {
+                for (const v of selectedVerses) await addVerse(id, v);
+            }
+            setSelectedVerses([]);
+            setNewSeriesTitle("");
+            setNewSeriesDesc("");
+            setShowSeriesModal(false);
+            router.push("/profile");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     // ── Sub-components ──────────────────────────────────────────
@@ -148,7 +223,7 @@ export default function BiblePage() {
                         className={`w-full text-left px-5 py-3.5 text-sm font-medium transition-all flex items-center justify-between ${selectedBook === book.id ? "bg-amber-50 text-amber-700" : "text-stone-700 hover:bg-stone-50"
                             }`}>
                         <span>{getBookName(book, language)}</span>
-                        <svg className="w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        <svg className="w-4 h-4 text-stone-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
                 ))}
             </div>
@@ -157,18 +232,6 @@ export default function BiblePage() {
 
     const ChapterList = () => (
         <div className="flex-1 overflow-y-auto">
-            {/* Search for premium */}
-            {selectedBook && (
-                <div className="p-3 border-b border-stone-100 sticky top-0 bg-white z-10">
-                    <input type="text"
-                        placeholder={isPremium ? tl(t.searchPlaceholder) : tl(t.searchLocked)}
-                        value={searchQuery}
-                        onFocus={() => { if (!isPremium) setShowPremiumGate(true); }}
-                        onChange={e => { if (isPremium) setSearchQuery(e.target.value); }}
-                        className="w-full text-sm bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-400"
-                    />
-                </div>
-            )}
             {bookLoading ? (
                 <div className="p-8 text-center text-stone-300 text-sm">loading...</div>
             ) : bookData ? (
@@ -180,7 +243,7 @@ export default function BiblePage() {
                                 : "bg-stone-50 text-stone-600 md:bg-transparent hover:bg-amber-50 md:hover:bg-stone-50"
                                 }`}>
                             {ch}{tl(t.chapterLabel)}
-                            <svg className="hidden md:block w-4 h-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            <svg className="hidden md:block w-4 h-4 text-stone-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </button>
                     ))}
                 </div>
@@ -189,36 +252,16 @@ export default function BiblePage() {
     );
 
     const VerseList = () => (
-        <div className="flex-1 overflow-y-auto">
-            {/* Selection bar */}
-            {isPremium && selectedVerses.length > 0 && (
-                <div className="flex items-center justify-between px-5 py-3 bg-amber-50 border-b border-amber-100 sticky top-0 z-10">
-                    <span className="text-amber-700 text-sm font-bold">{selectedVerses.length} {tl(t.verseSelected)}</span>
-                    <div className="flex gap-2">
-                        <button onClick={() => setSelectedVerses([])} className="text-stone-400 text-xs hover:text-stone-600 px-2">{tl(t.clearSelection)}</button>
-                        <button onClick={() => setShowSeriesModal(true)} className="bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold px-4 py-1.5 rounded-lg">{tl(t.createSeries)}</button>
-                    </div>
-                </div>
-            )}
+        <div className="flex-1 overflow-y-auto" ref={verseListRef}>
+            {/* Progress bar — sticky at top of verse panel */}
+            <VerseProgressBar
+                count={selectedVerses.length}
+                onSave={() => setShowSeriesModal(true)}
+                onClear={() => setSelectedVerses([])}
+            />
+
             <div className="p-4 space-y-1">
-                {searchQuery && searchResults.length > 0 ? (
-                    <>
-                        <p className="text-xs text-stone-400 mb-3">{searchResults.length} {tl(t.results)}</p>
-                        {searchResults.map(r => {
-                            const id = `${selectedBook}-${r.ch}-${r.v}`;
-                            const isSel = selectedVerses.some(v => v.id === id);
-                            return (
-                                <div key={id} onClick={() => handleVerseToggle(r.ch, r.v, r.text)}
-                                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${isSel ? "bg-amber-50 border-amber-300" : "border-stone-100 hover:border-amber-200"}`}>
-                                    <span className="text-xs font-bold text-amber-600 mr-2">{r.ch}:{r.v}</span>
-                                    <span className="text-sm text-stone-700 leading-relaxed">{r.text}</span>
-                                </div>
-                            );
-                        })}
-                    </>
-                ) : searchQuery ? (
-                    <div className="text-center text-stone-300 text-sm py-10">{tl(t.noResults)}</div>
-                ) : selectedChapter && bookData ? (
+                {selectedChapter && bookData ? (
                     Object.entries(bookData.chapters[String(selectedChapter)] || {}).map(([vNum, text]) => {
                         const id = `${selectedBook}-${selectedChapter}-${vNum}`;
                         const isSel = selectedVerses.some(v => v.id === id);
@@ -256,9 +299,9 @@ export default function BiblePage() {
             )}
 
             {/* ═══════════════════ MOBILE LAYOUT ═══════════════════ */}
-            <div className="md:hidden flex flex-col h-[calc(100vh-80px)]">
+            <div className="md:hidden flex flex-col" style={{ height: "calc(100vh - 80px)" }}>
                 {/* Mobile header with breadcrumb */}
-                <div className="bg-white border-b border-stone-100 px-4 py-3 flex items-center gap-3">
+                <div className="bg-white border-b border-stone-100 px-4 py-3 flex items-center gap-3 flex-shrink-0">
                     {mobileStep !== "books" && (
                         <button onClick={() => {
                             if (mobileStep === "verses") setMobileStep("chapters");
@@ -269,12 +312,12 @@ export default function BiblePage() {
                     )}
                     <div className="flex-1 min-w-0">
                         <h1 className="text-base font-bold text-stone-900 truncate">
-                            {mobileStep === "books" && tl(t.pageTitle)}
+                            {mobileStep === "books" && "내 시리즈 만들기"}
                             {mobileStep === "chapters" && selectedBookMeta && getBookName(selectedBookMeta, language)}
                             {mobileStep === "verses" && selectedBookMeta && `${getBookName(selectedBookMeta, language)} ${selectedChapter}${tl(t.chapterLabel)}`}
                         </h1>
                         {mobileStep === "books" && (
-                            <p className="text-xs text-stone-400">66 books</p>
+                            <p className="text-xs text-stone-400">구절을 선택해 나만의 시리즈를 만드세요</p>
                         )}
                     </div>
                 </div>
@@ -290,8 +333,8 @@ export default function BiblePage() {
             {/* ═══════════════════ DESKTOP LAYOUT ═══════════════════ */}
             <main className="hidden md:flex flex-col flex-1 max-w-7xl mx-auto w-full px-4 md:px-8 pt-6 pb-10">
                 <div className="mb-5">
-                    <h1 className="text-3xl font-bold text-stone-900">{tl(t.pageTitle)}</h1>
-                    <p className="text-stone-400 mt-1 text-sm">{tl(t.pageSubtitle)}</p>
+                    <h1 className="text-3xl font-bold text-stone-900">내 시리즈 만들기</h1>
+                    <p className="text-stone-400 mt-1 text-sm">성경 구절을 선택해 나만의 암송 시리즈를 만들어 보세요</p>
                 </div>
                 <div className="flex gap-4 flex-1" style={{ height: "calc(100vh - 230px)" }}>
                     {/* Book list */}
@@ -306,7 +349,7 @@ export default function BiblePage() {
                     </div>
                     {/* Verse list */}
                     <div className="flex-1 bg-white rounded-2xl shadow-sm border border-stone-100 flex flex-col overflow-hidden">
-                        {selectedChapter || searchQuery ? <VerseList /> : (
+                        {selectedChapter ? <VerseList /> : (
                             <div className="flex-1 flex flex-col items-center justify-center text-center text-stone-300 gap-2">
                                 <p className="text-sm">{selectedBook ? tl(t.tapChapter) : tl(t.selectChapter)}</p>
                                 {!isPremium && selectedBook && (
@@ -332,8 +375,10 @@ export default function BiblePage() {
                             className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm mb-5 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400" />
                         <div className="flex gap-3">
                             <button onClick={() => setShowSeriesModal(false)} className="flex-1 border border-stone-200 text-stone-500 font-bold py-3 rounded-xl hover:bg-stone-50">{tl(t.cancel)}</button>
-                            <button onClick={handleCreateSeries} disabled={!newSeriesTitle.trim()}
-                                className="flex-1 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-40 shadow-lg shadow-amber-400/30">{tl(t.create)}</button>
+                            <button onClick={handleCreateSeries} disabled={!newSeriesTitle.trim() || isSaving}
+                                className="flex-1 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-40 shadow-lg shadow-amber-400/30">
+                                {isSaving ? "저장 중..." : tl(t.create)}
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -36,7 +36,7 @@ export function LanguageSelector() {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-stone-100 transition-colors text-sm font-medium text-stone-700"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-stone-100 transition-colors text-base font-medium text-stone-700"
             >
                 <span className="inline">{currentLang.label}</span>
                 <svg
@@ -50,7 +50,7 @@ export function LanguageSelector() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-stone-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full left-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-stone-100 py-2 z-[200] animate-in fade-in zoom-in-95 duration-200">
                     {LANGUAGES.map((lang) => (
                         <button
                             key={lang.code}
@@ -59,7 +59,7 @@ export function LanguageSelector() {
                                 setIsOpen(false);
                             }}
                             className={cn(
-                                "w-full text-left px-4 py-2 text-sm flex items-center gap-3 hover:bg-stone-50 transition-colors",
+                                "w-full text-left px-4 py-2 text-base flex items-center gap-3 hover:bg-stone-50 transition-colors",
                                 language === lang.code ? "bg-stone-50 font-bold text-stone-900" : "text-stone-600"
                             )}
                         >
