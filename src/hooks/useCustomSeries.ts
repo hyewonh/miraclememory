@@ -4,7 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import {
     collection, addDoc, deleteDoc, doc, onSnapshot,
-    query, orderBy, serverTimestamp, updateDoc, arrayUnion, arrayRemove
+    query, orderBy, updateDoc, arrayUnion, arrayRemove,
+    setDoc, getDoc
 } from "firebase/firestore";
 
 export interface CustomVerseRef {
@@ -23,6 +24,17 @@ export interface CustomSeries {
     verses: CustomVerseRef[];
     createdAt: number;
     updatedAt: number;
+    shareId?: string;           // set when published
+}
+
+export interface SharedSeries {
+    title: string;
+    description: string;
+    verses: CustomVerseRef[];
+    ownerUid: string;
+    ownerName: string;
+    createdAt: number;
+    shareId: string;
 }
 
 export function useCustomSeries() {
@@ -58,6 +70,14 @@ export function useCustomSeries() {
 
     const deleteSeries = useCallback(async (seriesId: string) => {
         if (!user) return;
+        // Also remove from shared_series if published
+        try {
+            const seriesDoc = await getDoc(doc(db, "users", user.uid, "custom_series", seriesId));
+            const data = seriesDoc.data();
+            if (data?.shareId) {
+                await deleteDoc(doc(db, "shared_series", data.shareId));
+            }
+        } catch { /* ignore */ }
         await deleteDoc(doc(db, "users", user.uid, "custom_series", seriesId));
     }, [user]);
 
@@ -77,5 +97,37 @@ export function useCustomSeries() {
         });
     }, [user]);
 
-    return { series, loading, createSeries, deleteSeries, addVerse, removeVerse };
+    /** Publish series to public shared_series collection. Returns shareId. */
+    const publishSeries = useCallback(async (cs: CustomSeries): Promise<string> => {
+        if (!user) throw new Error("Not logged in");
+        const shareId = cs.shareId ?? `${user.uid}_${cs.id}`;
+        const sharedData: SharedSeries = {
+            title: cs.title,
+            description: cs.description,
+            verses: cs.verses,
+            ownerUid: user.uid,
+            ownerName: user.displayName || "익명",
+            createdAt: cs.createdAt,
+            shareId,
+        };
+        await setDoc(doc(db, "shared_series", shareId), sharedData);
+        // Save shareId back to user's doc
+        await updateDoc(doc(db, "users", user.uid, "custom_series", cs.id), { shareId });
+        return shareId;
+    }, [user]);
+
+    /** Import a shared series into logged-in user's library */
+    const importSharedSeries = useCallback(async (shared: SharedSeries): Promise<string | null> => {
+        if (!user) return null;
+        const ref = await addDoc(collection(db, "users", user.uid, "custom_series"), {
+            title: shared.title,
+            description: shared.description,
+            verses: shared.verses,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        });
+        return ref.id;
+    }, [user]);
+
+    return { series, loading, createSeries, deleteSeries, addVerse, removeVerse, publishSeries, importSharedSeries };
 }

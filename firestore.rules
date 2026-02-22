@@ -38,5 +38,14 @@ service cloud.firestore {
          // Allow users to mark a code as used (usedBy must be their own uid)
          (request.resource.data.used == true && request.resource.data.usedBy == request.auth.uid));
     }
+
+    // Shared series: anyone can read, owner can write/delete
+    match /shared_series/{shareId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
   }
 }
