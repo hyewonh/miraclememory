@@ -121,7 +121,7 @@ export default function SeriesPage() {
 
             {/* Main Content */}
             <div className="flex-1 overflow-y-auto">
-                <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8">
+                <div className="max-w-[1280px] mx-auto px-4 md:px-8 pt-3 pb-6 md:pt-4 md:pb-8">
                     <div className="flex flex-col md:flex-row gap-6 md:gap-8 md:items-start">
 
                         {/* LEFT (desktop) / TOP (mobile): Verse Detail Hero */}

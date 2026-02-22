@@ -37,13 +37,14 @@ function StepIndicator({
     labels: string[];
 }) {
     return (
-        <div className="flex items-center justify-center gap-0 mb-6 select-none">
-            {([1, 2, 3, 4] as PracticeStep[]).map((step, i) => {
-                const done = stepDone[step];
-                const active = currentStep === step;
-                return (
-                    <div key={step} className="flex items-center">
-                        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center mb-6 select-none">
+            {/* Row 1: circles + connectors */}
+            <div className="flex items-center">
+                {([1, 2, 3, 4] as PracticeStep[]).map((step, i) => {
+                    const done = stepDone[step];
+                    const active = currentStep === step;
+                    return (
+                        <div key={step} className="flex items-center">
                             <div className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
                                 done
@@ -54,22 +55,34 @@ function StepIndicator({
                             )}>
                                 {done ? "✓" : step}
                             </div>
+                            {i < 3 && (
+                                <div className={cn(
+                                    "w-10 h-0.5 transition-all",
+                                    done ? "bg-amber-400" : "bg-stone-200"
+                                )} />
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+            {/* Row 2: labels */}
+            <div className="flex items-start mt-1.5">
+                {([1, 2, 3, 4] as PracticeStep[]).map((step, i) => {
+                    const done = stepDone[step];
+                    const active = currentStep === step;
+                    return (
+                        <div key={step} className="flex items-center">
                             <span className={cn(
-                                "text-[9px] font-bold uppercase tracking-wide w-16 text-center leading-tight",
+                                "text-[9px] font-bold uppercase tracking-wide w-8 text-center leading-tight",
                                 done ? "text-amber-600" : active ? "text-stone-700" : "text-stone-300"
                             )}>
                                 {labels[i]}
                             </span>
+                            {i < 3 && <div className="w-10" />}
                         </div>
-                        {i < 3 && (
-                            <div className={cn(
-                                "w-8 h-0.5 mt-[-10px] mb-auto transition-all",
-                                done ? "bg-amber-400" : "bg-stone-200"
-                            )} />
-                        )}
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -398,7 +411,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
     // ─── Render ─────────────────────────────────────────────
     return (
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-stone-200/60 max-w-4xl mx-auto my-8 relative">
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-stone-200/60 max-w-4xl mx-auto mt-0 mb-6 relative">
             {/* Memorized Badge */}
             {memorized && (
                 <div className="absolute top-6 right-6 z-10 animate-in fade-in zoom-in duration-500">
