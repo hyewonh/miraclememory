@@ -12,6 +12,7 @@ interface OverallStatsProps {
 export function OverallStats({ allProgress, profile }: OverallStatsProps) {
     const { language } = useLanguage();
     const [showRankInfo, setShowRankInfo] = useState(false);
+    const [showCrownInfo, setShowCrownInfo] = useState(false);
     const [showMastered, setShowMastered] = useState(false);
 
     // Calculate totals — count only current language to avoid double-counting
@@ -181,7 +182,37 @@ export function OverallStats({ allProgress, profile }: OverallStatsProps) {
                 </div>
 
                 {/* Crown Level (Renamed to Crowns Earned) */}
-                <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm flex flex-col items-center justify-center text-center group h-full">
+                <div className="bg-white rounded-2xl p-6 border border-stone-100 shadow-sm flex flex-col items-center justify-center text-center group h-full relative overflow-visible">
+                    {/* Info button */}
+                    <button
+                        onClick={() => setShowCrownInfo(!showCrownInfo)}
+                        className="absolute top-2 right-2 text-stone-300 hover:text-stone-500 transition-colors"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </button>
+
+                    {/* Tooltip popup */}
+                    {showCrownInfo && (
+                        <>
+                            <div className="fixed inset-0 z-40 bg-black/10" onClick={() => setShowCrownInfo(false)} />
+                            <div className="absolute top-10 right-0 z-50 w-64 bg-white rounded-xl shadow-xl border border-stone-200 p-4 text-left animate-in fade-in zoom-in-95 duration-100">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="font-bold text-stone-900 text-sm">👑 Crowns Earned</h4>
+                                    <button onClick={() => setShowCrownInfo(false)} className="text-stone-400 hover:text-stone-600">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                                <p className="text-xs text-stone-500 leading-relaxed">
+                                    A Crown is awarded each time you <strong>complete an entire series</strong>.
+                                </p>
+                                <div className="mt-3 space-y-1.5 text-xs text-stone-600">
+                                    <div className="flex items-center gap-2"><span>👑 ×1</span><span>Complete 1 series → Gold Rank</span></div>
+                                    <div className="flex items-center gap-2"><span>👑 ×3</span><span>Complete 3 series → Diamond Rank</span></div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     <div className="text-4xl font-serif font-bold text-amber-500 mb-2 group-hover:scale-110 transition-transform">
                         👑 {seriesCompleted}
                     </div>

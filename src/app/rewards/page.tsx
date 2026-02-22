@@ -230,6 +230,53 @@ export default function RewardsPage() {
                     </ul>
                 </div>
 
+                {/* Rewards Guide */}
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl shadow-md p-6 space-y-4">
+                    <h2 className="font-bold text-amber-900 flex items-center gap-2">
+                        🎁 Rewards Guide
+                    </h2>
+
+                    {/* Point milestone */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">Point Milestones</p>
+                        <div className="bg-white rounded-xl p-3 text-sm space-y-2 border border-amber-100">
+                            <div className="flex items-start gap-2">
+                                <span className="text-amber-500 font-bold shrink-0">5,000P</span>
+                                <span className="text-stone-600">→ <strong>1 month free premium</strong> automatically issued. Points reset after redemption.</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="text-amber-500 font-bold shrink-0">20,000P</span>
+                                <span className="text-stone-600">→ <strong>1 year free premium</strong> automatically issued.</span>
+                            </div>
+                        </div>
+                        <p className="text-[11px] text-amber-700 px-1">
+                            Example: 5 friends sign up (+500P each = 2,500P) — not enough for 1 month. But 2 paid friends (+3,000P each = 6,000P) → 1 month free! 🎉
+                        </p>
+                    </div>
+
+                    {/* Referral tiers */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-amber-800 uppercase tracking-wider">Referral Tiers</p>
+                        <div className="bg-white rounded-xl p-3 text-sm space-y-2 border border-amber-100">
+                            <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-xs font-bold border border-stone-300">Friend 🌱</span>
+                                <span className="text-stone-500">Starting tier (0 paid referrals)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300">Champion ⭐</span>
+                                <span className="text-stone-500"><strong>3 paid friends</strong> referred → Champion</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-bold border border-rose-300">Ambassador 🏆</span>
+                                <span className="text-stone-500"><strong>10 paid friends</strong> referred → Ambassador (free premium for life)</span>
+                            </div>
+                        </div>
+                        <p className="text-[11px] text-amber-700 px-1">
+                            Only <strong>paid subscribers</strong> you refer count toward your tier. Free signups earn you +500P each but don't advance your tier.
+                        </p>
+                    </div>
+                </div>
+
                 {/* My Promo Codes */}
                 {promoCodes.length > 0 && (
                     <div className="bg-white rounded-2xl shadow-md p-6">
