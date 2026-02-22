@@ -57,10 +57,6 @@ export function UserDashboard() {
         <div className="w-full max-w-7xl mx-auto px-6 md:px-10 mt-4">
             {/* Welcome dashboard */}
             <div className="bg-stone-100 border border-stone-200 rounded-3xl p-5 md:p-6 overflow-hidden relative">
-                {/* Subtle decorative circles */}
-                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-amber-200/30 pointer-events-none" />
-                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-stone-200/50 pointer-events-none" />
-
                 <div className="relative flex flex-col md:flex-row items-start md:items-center gap-5">
                     {/* Stats row */}
                     <div className="flex items-center gap-4 flex-wrap">
