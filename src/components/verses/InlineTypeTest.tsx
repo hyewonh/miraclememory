@@ -49,11 +49,32 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         fire(0.1, { spread: 120, startVelocity: 45 });
     }, []);
 
+    // Characters that should be auto-filled/ignored when typing
+    const isAutoFillChar = (char: string) => /[,.:;?!"\-]/.test(char);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (completed) return;
         const val = e.target.value;
-        setTyped(val);
-        if (val === fullText && !completedFired.current) {
+
+        let newTyped = val;
+
+        // Auto-fill logic
+        // If user typed a character, check if the next expected character in fullText is an auto-fill char.
+        // If so, append it to newTyped (and keep doing so if there are multiple consecutive auto-fill chars).
+        if (newTyped.length > typed.length) { // user is adding chars
+            while (newTyped.length < fullText.length && isAutoFillChar(fullText[newTyped.length])) {
+                newTyped += fullText[newTyped.length];
+            }
+        } else {
+            // If user is deleting (backspace), and they delete into an auto-fill char, 
+            // we should delete the auto-fill chars as well so they don't get stuck.
+            while (newTyped.length > 0 && isAutoFillChar(newTyped[newTyped.length - 1])) {
+                newTyped = newTyped.slice(0, -1);
+            }
+        }
+
+        setTyped(newTyped);
+        if (newTyped === fullText && !completedFired.current) {
             completedFired.current = true;
             setCompleted(true);
             fireConfetti();
