@@ -405,8 +405,8 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
     const stepLabels = [
         tl(t.step1Record),
         tl(t.step2Listen),
-        tl(t.step3HintListen),
-        tl(t.step4TypeTest),
+        "Hint",
+        "Test",
     ];
 
     // ─── Render ─────────────────────────────────────────────
@@ -423,26 +423,23 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
             )}
 
             <div className="p-8 md:p-12 space-y-8">
-                {/* Header */}
+                {/* Header: title only */}
                 <div className="text-center">
-                    <div className="text-sm font-bold tracking-widest text-primary uppercase mb-1">
+                    <div className="text-sm font-bold tracking-widest text-primary uppercase">
                         {tl(t.memorizeThisVerse)}
                     </div>
-                    <p className="text-lg text-rose-900 font-serif italic font-medium">
-                        — {verse.reference[language]}
-                    </p>
                 </div>
-
-                {/* Step Indicator */}
-                <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
 
                 {/* ─── STEP 1: Record ─────────────────────────────── */}
                 {practiceStep === 1 && (
                     <div className="flex flex-col items-center gap-6">
-                        {/* Full text shown */}
+                        {/* Full text + reference */}
                         <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed text-center">
                             {liveText}
                         </div>
+                        <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
+                        {/* Step Indicator */}
+                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
 
                         <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-4">
                             <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">{tl(t.step1Record)}</p>
@@ -495,10 +492,13 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                 {/* ─── STEP 2: Listen 10x ─────────────────────────── */}
                 {practiceStep === 2 && (
                     <div className="flex flex-col items-center gap-6">
-                        {/* Full text */}
+                        {/* Full text + reference */}
                         <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed text-center">
                             {liveText}
                         </div>
+                        <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
+                        {/* Step Indicator */}
+                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
 
                         <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-4">
                             <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">{tl(t.step2Listen)}</p>
@@ -571,10 +571,13 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                 {/* ─── STEP 3: Hint + Listen 10x ──────────────────── */}
                 {practiceStep === 3 && (
                     <div className="flex flex-col items-center gap-6">
-                        {/* Masked text */}
+                        {/* Masked text + reference */}
                         <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed flex flex-wrap justify-center items-center text-center">
                             {getMaskedText(liveText)}
                         </div>
+                        <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
+                        {/* Step Indicator */}
+                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
 
                         <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-4">
                             <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">{tl(t.step3HintListen)}</p>
@@ -639,11 +642,14 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
                 {/* ─── STEP 4: Type Test ───────────────────────────── */}
                 {practiceStep === 4 && (
-                    <div className="flex flex-col items-center gap-6">
+                    <div className="flex flex-col items-center gap-4 w-full">
+                        <p className="text-lg text-rose-900 font-serif italic font-medium">— {verse.reference[language]}</p>
+                        {/* Step Indicator */}
+                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
                         <InlineTypeTest
                             text={liveText}
                             language={language}
-                            onClose={() => { /* no auto-close in step 4 */ }}
+                            onClose={() => { setPracticeStep(3); setStepDone(p => ({ ...p, 3: false, 4: false })); setLoopCount(0); }}
                             onComplete={() => {
                                 setTypeTestCompleted(true);
                                 markStepDone(4);
