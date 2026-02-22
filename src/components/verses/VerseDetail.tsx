@@ -426,7 +426,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                 {/* Header: title only */}
                 <div className="text-center">
                     <div className="text-sm font-bold tracking-widest text-primary uppercase">
-                        {tl(t.memorizeThisVerse)}
+                        MEMORIZE THIS VERSE
                     </div>
                 </div>
 
