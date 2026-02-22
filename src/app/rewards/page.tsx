@@ -168,11 +168,11 @@ export default function RewardsPage() {
                             <div className="mt-3 pt-3 border-t border-stone-100 space-y-1 text-xs text-stone-500">
                                 <div className="flex items-center gap-2">
                                     <span className="font-bold text-amber-500 w-16 shrink-0">5,000P</span>
-                                    <span>→ 1 month free premium automatically issued. Points reset after redemption.</span>
+                                    <span>→ 1 Month Free Premium</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="font-bold text-amber-500 w-16 shrink-0">20,000P</span>
-                                    <span>→ 1 year free premium automatically issued.</span>
+                                    <span>→ 1 Year Free Premium</span>
                                 </div>
                             </div>
                         </div>
