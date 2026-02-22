@@ -419,6 +419,11 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
     // ── Skip all steps ──────────────────────────────────────
     const skipAllSteps = () => {
+        if (audioRef.current && !audioRef.current.paused) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+        setIsPlaying(false);
         setStepDone({ 1: true, 2: true, 3: true, 4: true });
         setTypeTestCompleted(true);
         setPracticeStep(4);
@@ -426,10 +431,10 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
     // ─── Step labels ───────────────────────────────────────
     const stepLabels = [
-        tl(t.step1Record),
-        tl(t.step2Listen),
-        "Shadow",
-        "Test",
+        "RECORD",
+        "LISTEN",
+        "SHADOW",
+        "TEST",
     ];
 
     // ─── Shadowing helpers ─────────────────────────────────
@@ -455,6 +460,10 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
     // Handle step indicator click
     const handleStepClick = (step: PracticeStep) => {
+        if (audioRef.current && !audioRef.current.paused) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
         setPracticeStep(step);
         setLoopCount(0);
         setIsPlaying(false);

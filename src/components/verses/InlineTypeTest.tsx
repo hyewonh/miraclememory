@@ -65,7 +65,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Escape") {
             e.preventDefault();
-            onClose();
+            if (completed) onClose();
         }
     };
 
@@ -194,8 +194,16 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
             {/* Status bar */}
             <div className="mt-3 flex items-center justify-between text-xs font-bold px-1">
                 {completed ? (
-                    <span className="text-emerald-600 flex items-center gap-1 animate-in fade-in zoom-in duration-300 w-full justify-center">
-                        {tl(t.typeComplete)}
+                    <span className="flex items-center justify-between w-full">
+                        <span className="text-emerald-600 flex items-center gap-1 animate-in fade-in zoom-in duration-300">
+                            {tl(t.typeComplete)}
+                        </span>
+                        <button
+                            className="text-stone-500 hover:text-stone-700 transition-colors"
+                            onClick={(e) => { e.stopPropagation(); onClose(); }}
+                        >
+                            {tl(t.closeEsc)}
+                        </button>
                     </span>
                 ) : (
                     <>
@@ -203,8 +211,8 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                             {typed.length} / {totalTypeable} {tl(t.charCount)}
                         </span>
                         <button
-                            className="text-rose-400 hover:text-rose-600 transition-colors"
-                            onClick={(e) => { e.stopPropagation(); onClose(); }}
+                            className="text-stone-300 transition-colors cursor-not-allowed"
+                            disabled={true}
                         >
                             {tl(t.closeEsc)}
                         </button>
