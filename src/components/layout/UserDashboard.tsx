@@ -83,7 +83,7 @@ export function UserDashboard() {
                                 </h3>
                                 <button
                                     onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
-                                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-md shadow-amber-200 text-sm"
+                                    className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
                                 >
                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M8 5v14l11-7z" />
@@ -100,7 +100,7 @@ export function UserDashboard() {
                                     onClick={() => {
                                         document.getElementById("series")?.scrollIntoView({ behavior: "smooth" });
                                     }}
-                                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-md shadow-amber-200 text-sm"
+                                    className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
                                 >
                                     Browse Series
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
