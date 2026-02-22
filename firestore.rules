@@ -46,6 +46,21 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid;
       allow delete: if request.auth != null
         && resource.data.ownerUid == request.auth.uid;
+
+      // Comments: anyone can read, logged-in users can create
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null
+          && request.resource.data.authorUid == request.auth.uid;
+        allow delete: if request.auth != null
+          && resource.data.authorUid == request.auth.uid;
+      }
+    }
+
+    // Leaderboard: anyone authenticated can read, only self can write
+    match /leaderboard/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
