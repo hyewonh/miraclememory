@@ -31,10 +31,12 @@ function StepIndicator({
     currentStep,
     stepDone,
     labels,
+    onStepClick,
 }: {
     currentStep: PracticeStep;
     stepDone: Record<PracticeStep, boolean>;
     labels: string[];
+    onStepClick?: (step: PracticeStep) => void;
 }) {
     return (
         <div className="flex flex-col items-center mb-6 select-none">
@@ -43,16 +45,21 @@ function StepIndicator({
                 {([1, 2, 3, 4] as PracticeStep[]).map((step, i) => {
                     const done = stepDone[step];
                     const active = currentStep === step;
+                    const clickable = !!onStepClick;
                     return (
                         <div key={step} className="flex items-center">
-                            <div className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
-                                done
-                                    ? "bg-amber-500 border-amber-500 text-white"
-                                    : active
-                                        ? "bg-white border-amber-500 text-amber-600 ring-4 ring-amber-100"
-                                        : "bg-white border-stone-300 text-stone-400"
-                            )}>
+                            <div
+                                onClick={() => onStepClick?.(step)}
+                                className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
+                                    clickable && "cursor-pointer hover:scale-110",
+                                    done
+                                        ? "bg-amber-500 border-amber-500 text-white"
+                                        : active
+                                            ? "bg-white border-amber-500 text-amber-600 ring-4 ring-amber-100"
+                                            : "bg-white border-stone-300 text-stone-400"
+                                )}
+                            >
                                 {done ? "✓" : step}
                             </div>
                             {i < 3 && (
@@ -107,7 +114,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [loopCount, setLoopCount] = useState(0);
-    const [targetLoops, setTargetLoops] = useState(10);
+    const [targetLoops, setTargetLoops] = useState(5);
     const [isUploading, setIsUploading] = useState(false);
 
     // ── 4-Step practice state ──────────────────────────────
@@ -429,12 +436,22 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
     const [shadowInput, setShadowInput] = useState("");
     const [shadowDone, setShadowDone] = useState(false);
+    // Shadow repeat tracking: 5 oral repetitions
+    const [shadowReps, setShadowReps] = useState<boolean[]>([false, false, false, false, false]);
 
     // Reset shadowing state on verse change
     useEffect(() => {
         setShadowInput("");
         setShadowDone(false);
+        setShadowReps([false, false, false, false, false]);
     }, [verse.id]);
+
+    // Handle step indicator click
+    const handleStepClick = (step: PracticeStep) => {
+        setPracticeStep(step);
+        setLoopCount(0);
+        setIsPlaying(false);
+    };
 
     // ─── Render ─────────────────────────────────────────────
     return (
@@ -465,8 +482,8 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                             {liveText}
                         </div>
                         <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
-                        {/* Step Indicator */}
-                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
+                        {/* Step Indicator — clickable */}
+                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} onStepClick={handleStepClick} />
 
                         <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-4">
                             <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">{tl(t.step1Record)}</p>
@@ -524,8 +541,9 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                             {liveText}
                         </div>
                         <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
-                        {/* Step Indicator */}
-                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
+                        {/* Step Indicator — clickable */}
+                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} onStepClick={handleStepClick} />
+
 
                         <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-4">
                             <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">{tl(t.step2Listen)}</p>
@@ -583,31 +601,24 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                             <button onClick={skipAllSteps} className="text-xs text-stone-400 hover:text-stone-600 underline underline-offset-2">
                                 {tl(t.skipStep)}
                             </button>
-                            {stepDone[2] && (
-                                <button
-                                    onClick={() => { setPracticeStep(3); setLoopCount(0); setIsPlaying(false); }}
-                                    className="bg-amber-500 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-amber-600 transition-all animate-in fade-in"
-                                >
-                                    {tl(t.nextStep)}
-                                </button>
-                            )}
                         </div>
                     </div>
                 )}
 
-                {/* ─── STEP 3: Shadowing (listen + type first letters) ── */}
+                {/* ─── STEP 3: Shadowing — 첫 글자 + 5번 체크 ──────── */}
                 {practiceStep === 3 && (() => {
                     const words = getFirstLetters(liveText);
-                    const inputWords = shadowInput.split(' ');
-                    // Check correctness word-by-word so far
-                    const allCorrect = words.every((w, i) => {
-                        const typed = (inputWords[i] ?? "").toLowerCase();
-                        return typed === w.raw.toLowerCase();
-                    }) && inputWords.length >= words.length;
+                    const allShadowRepsChecked = shadowReps.every(Boolean);
+
+                    // When all 5 reps checked, mark done
+                    if (allShadowRepsChecked && !stepDone[3]) {
+                        markStepDone(3);
+                        setShadowDone(true);
+                    }
 
                     return (
                         <div className="flex flex-col items-center gap-6 w-full">
-                            {/* First-letter hints */}
+                            {/* First-letter hints only */}
                             <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed flex flex-wrap justify-center items-center text-center gap-x-2">
                                 {words.map((w, i) => (
                                     <span key={i} className="inline-flex items-center gap-[2px]">
@@ -620,110 +631,47 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                 ))}
                             </div>
                             <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
-                            <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
+                            <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} onStepClick={handleStepClick} />
 
-                            <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-4">
-                                <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">Shadowing — Listen &amp; Type</p>
+                            <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-5">
+                                <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">5번 따라 말해보세요</p>
 
-                                {/* Audio controls */}
-                                <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={togglePlayback}
-                                        className="w-16 h-16 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 hover:bg-emerald-700 transition-all"
-                                    >
-                                        {isPlaying ? (
-                                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 9v6m4-6v6" /></svg>
-                                        ) : (
-                                            <svg className="w-8 h-8 translate-x-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                        )}
-                                    </button>
-                                    <div className="flex items-center gap-2">
-                                        <label className="text-xs font-bold text-stone-500 uppercase tracking-wider">Repeats</label>
-                                        <select
-                                            value={targetLoops}
-                                            onChange={(e) => setTargetLoops(Number(e.target.value))}
-                                            className="h-8 px-2 rounded-lg border border-stone-200 bg-white text-stone-800 font-bold text-sm focus:border-amber-500 outline-none cursor-pointer"
+                                {/* 5 repeat check buttons */}
+                                <div className="flex items-center gap-3">
+                                    {shadowReps.map((checked, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => {
+                                                if (checked) return; // can't uncheck
+                                                const updated = [...shadowReps];
+                                                updated[i] = true;
+                                                setShadowReps(updated);
+                                            }}
+                                            className={cn(
+                                                "w-12 h-12 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all",
+                                                checked
+                                                    ? "bg-amber-500 border-amber-500 text-white scale-105 shadow-md"
+                                                    : "bg-white border-stone-300 text-stone-400 hover:border-amber-400 hover:text-amber-500"
+                                            )}
                                         >
-                                            <option value={3}>3x</option>
-                                            <option value={5}>5x</option>
-                                            <option value={10}>10x</option>
-                                        </select>
-                                    </div>
+                                            {checked ? "✓" : i + 1}
+                                        </button>
+                                    ))}
                                 </div>
 
-                                {/* Typing area */}
-                                <textarea
-                                    value={shadowInput}
-                                    onChange={e => {
-                                        setShadowInput(e.target.value);
-                                        // auto-check completion
-                                        const typed = e.target.value.trim().split(/\s+/);
-                                        if (typed.length >= words.length) {
-                                            const correct = words.every((w, i) =>
-                                                (typed[i] ?? "").toLowerCase() === w.raw.toLowerCase()
-                                            );
-                                            if (correct) {
-                                                setShadowDone(true);
-                                                markStepDone(3);
-                                            }
-                                        }
-                                    }}
-                                    placeholder="Type the full verse from memory..."
-                                    rows={4}
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 bg-white text-stone-800 text-sm resize-none focus:border-amber-400 outline-none transition-colors"
-                                />
+                                {/* Progress text */}
+                                <p className="text-sm text-stone-500">
+                                    {shadowReps.filter(Boolean).length} / 5 완료
+                                </p>
 
-                                {/* Word-by-word feedback */}
-                                <div className="flex flex-wrap gap-1 justify-center">
-                                    {words.map((w, i) => {
-                                        const typed = (shadowInput.trim().split(/\s+/)[i] ?? "").toLowerCase();
-                                        const isCorrect = typed === w.raw.toLowerCase();
-                                        const hasTyped = typed.length > 0;
-                                        return (
-                                            <span key={i} className={cn(
-                                                "text-xs px-2 py-0.5 rounded-full font-mono font-bold border",
-                                                hasTyped
-                                                    ? isCorrect
-                                                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                                                        : "bg-rose-50 border-rose-300 text-rose-600"
-                                                    : "bg-stone-100 border-stone-200 text-stone-400"
-                                            )}>
-                                                {w.first}{'_'.repeat(Math.min(w.rest.length, 3))}
-                                            </span>
-                                        );
-                                    })}
-                                </div>
-
-                                {shadowDone && (
-                                    <div className="text-emerald-600 text-sm font-bold animate-in fade-in">🎉 Perfect! Well done!</div>
-                                )}
-                                {(isPlaying || loopCount > 0) && (
-                                    <div className="w-full space-y-1">
-                                        <div className="flex justify-between text-xs text-stone-500">
-                                            <span>{isPlaying ? "Playing..." : ""}</span>
-                                            <span>{Math.min(loopCount, targetLoops)} / {targetLoops}</span>
-                                        </div>
-                                        <div className="h-1.5 bg-stone-200 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                                                style={{ width: `${(Math.min(loopCount, targetLoops) / targetLoops) * 100}%` }} />
-                                        </div>
-                                    </div>
+                                {allShadowRepsChecked && (
+                                    <div className="text-emerald-600 text-sm font-bold animate-in fade-in">🎉 잘 하셨어요!</div>
                                 )}
                             </div>
 
-                            <div className="flex gap-3">
-                                <button onClick={skipAllSteps} className="text-xs text-stone-400 hover:text-stone-600 underline underline-offset-2">
-                                    {tl(t.skipStep)}
-                                </button>
-                                {stepDone[3] && (
-                                    <button
-                                        onClick={() => { setPracticeStep(4); setLoopCount(0); setIsPlaying(false); }}
-                                        className="bg-amber-500 text-white px-6 py-2 rounded-full text-sm font-bold hover:bg-amber-600 transition-all animate-in fade-in"
-                                    >
-                                        {tl(t.nextStep)}
-                                    </button>
-                                )}
-                            </div>
+                            <button onClick={skipAllSteps} className="text-xs text-stone-400 hover:text-stone-600 underline underline-offset-2">
+                                {tl(t.skipStep)}
+                            </button>
                         </div>
                     );
                 })()}
@@ -732,8 +680,8 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                 {practiceStep === 4 && (
                     <div className="flex flex-col items-center gap-4 w-full">
                         <p className="text-lg text-rose-900 font-serif italic font-medium">— {verse.reference[language]}</p>
-                        {/* Step Indicator */}
-                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} />
+                        {/* Step Indicator — clickable */}
+                        <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} onStepClick={handleStepClick} />
                         <InlineTypeTest
                             text={liveText}
                             language={language}
