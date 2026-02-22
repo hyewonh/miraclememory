@@ -32,7 +32,6 @@ export function UserDashboard() {
             ? INITIAL_SERIES.find(s => s.id === lastSeriesId)
             : null;
 
-        // Find first unmemorized verse in last series
         let resumeVerseIndex = 0;
         if (lastSeries && allProgress[lastSeriesId]) {
             const verses = VERSES.filter(v => v.seriesId === lastSeriesId);
@@ -55,26 +54,26 @@ export function UserDashboard() {
     const hasActivity = stats.totalVerses > 0 || stats.streak > 0;
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-6 md:px-10 mt-8">
+        <div className="w-full max-w-7xl mx-auto px-6 md:px-10 mt-4">
             {/* Welcome dashboard */}
-            <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-3xl p-6 md:p-8 text-white overflow-hidden relative">
-                {/* Decorative circles */}
-                <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-amber-500/10 pointer-events-none" />
-                <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-amber-400/5 pointer-events-none" />
+            <div className="bg-stone-100 border border-stone-200 rounded-3xl p-5 md:p-6 overflow-hidden relative">
+                {/* Subtle decorative circles */}
+                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-amber-200/30 pointer-events-none" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-stone-200/50 pointer-events-none" />
 
-                <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
+                <div className="relative flex flex-col md:flex-row items-start md:items-center gap-5">
                     {/* Stats row */}
-                    <div className="flex items-center gap-6 flex-wrap">
+                    <div className="flex items-center gap-4 flex-wrap">
                         {/* Streak */}
-                        <div className="flex flex-col items-center bg-white/10 rounded-2xl px-5 py-3 min-w-[80px]">
-                            <div className="text-3xl font-bold text-amber-400">🔥 {stats.streak}</div>
-                            <div className="text-[10px] uppercase tracking-widest text-white/60 font-bold mt-1">Day Streak</div>
+                        <div className="flex flex-col items-center bg-white border border-stone-200 rounded-2xl px-5 py-3 min-w-[80px] shadow-sm">
+                            <div className="text-3xl font-bold text-amber-500">🔥 {stats.streak}</div>
+                            <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold mt-1">Day Streak</div>
                         </div>
 
                         {/* Total verses */}
-                        <div className="flex flex-col items-center bg-white/10 rounded-2xl px-5 py-3 min-w-[80px]">
-                            <div className="text-3xl font-bold text-emerald-400">{stats.totalVerses}</div>
-                            <div className="text-[10px] uppercase tracking-widest text-white/60 font-bold mt-1">Verses</div>
+                        <div className="flex flex-col items-center bg-white border border-stone-200 rounded-2xl px-5 py-3 min-w-[80px] shadow-sm">
+                            <div className="text-3xl font-bold text-emerald-500">{stats.totalVerses}</div>
+                            <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold mt-1">Verses</div>
                         </div>
                     </div>
 
@@ -82,13 +81,13 @@ export function UserDashboard() {
                     <div className="flex-1 min-w-0">
                         {stats.lastSeries ? (
                             <div>
-                                <p className="text-white/50 text-xs uppercase tracking-widest font-bold mb-1">Continue where you left off</p>
-                                <h3 className="text-lg font-bold text-white mb-3 truncate">
+                                <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">Continue where you left off</p>
+                                <h3 className="text-lg font-bold text-stone-800 mb-3 truncate">
                                     {stats.lastSeries.title[language]}
                                 </h3>
                                 <button
                                     onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
-                                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg shadow-amber-500/30 text-sm"
+                                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-md shadow-amber-200 text-sm"
                                 >
                                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M8 5v14l11-7z" />
@@ -98,14 +97,14 @@ export function UserDashboard() {
                             </div>
                         ) : (
                             <div>
-                                <p className="text-white/70 text-sm mb-3">
+                                <p className="text-stone-500 text-sm mb-3">
                                     Start memorizing scripture today — one verse at a time.
                                 </p>
                                 <button
                                     onClick={() => {
                                         document.getElementById("series")?.scrollIntoView({ behavior: "smooth" });
                                     }}
-                                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg shadow-amber-500/30 text-sm"
+                                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-md shadow-amber-200 text-sm"
                                 >
                                     Browse Series
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,7 +121,7 @@ export function UserDashboard() {
                             <div className="text-4xl mb-1">
                                 {stats.streak >= 7 ? "🏆" : stats.streak >= 3 ? "⚡" : "✨"}
                             </div>
-                            <p className="text-white/50 text-xs max-w-[160px] leading-relaxed">
+                            <p className="text-stone-400 text-xs max-w-[160px] leading-relaxed">
                                 {stats.streak >= 7
                                     ? "Incredible streak! Keep it up!"
                                     : stats.streak >= 3
