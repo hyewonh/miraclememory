@@ -60,7 +60,7 @@ export default function Home() {
 
         {/* User Dashboard (logged-in users) */}
         {user && (
-          <div className="w-full mb-10 mt-6">
+          <div className="w-full mb-8 mt-2">
             <UserDashboard />
           </div>
         )}
