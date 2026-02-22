@@ -40,9 +40,9 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                 isAbsolute ? "absolute top-0 left-1/2 -translate-x-1/2 text-stone-900" : "relative",
                 className
             )}>
-                {/* Mobile: Hamburger Button */}
+                {/* Mobile/Tablet: Hamburger Button */}
                 <button
-                    className="md:hidden p-2 -ml-2 text-stone-900"
+                    className="lg:hidden p-2 -ml-2 text-stone-900"
                     onClick={() => setIsMenuOpen(true)}
                 >
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,7 +51,7 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                 </button>
 
                 {/* Left: Language Selector (Desktop Only) */}
-                <div className="hidden md:block">
+                <div className="hidden lg:block">
                     <LanguageSelector />
                 </div>
 
@@ -63,7 +63,7 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                 </div>
 
                 {/* Right: User Menu (Desktop Only) */}
-                <div className="hidden md:flex items-center gap-4 ml-auto">
+                <div className="hidden lg:flex items-center gap-4 ml-auto">
                     {user ? (
                         <div className="flex items-center gap-4">
                             <Link href="/profile" className="font-medium text-stone-900 flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -94,14 +94,14 @@ export function Navbar({ className, isAbsolute = false }: NavbarProps) {
                     )}
                 </div>
 
-                {/* Mobile: Placeholder for Right side balance */}
-                <div className="md:hidden w-8"></div>
+                {/* Mobile/Tablet: Placeholder for Right side balance */}
+                <div className="lg:hidden w-8"></div>
             </nav>
 
 
             {/* Mobile Sidebar Menu (Overlay) */}
             {isMenuOpen && (
-                <div className="fixed inset-0 z-[100] md:hidden">
+                <div className="fixed inset-0 z-[100] lg:hidden">
                     {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
