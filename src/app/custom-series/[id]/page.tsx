@@ -1,132 +1,149 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { useProfile } from "@/hooks/useProfile";
-import { useCustomSeries, SharedSeries } from "@/hooks/useCustomSeries";
-import { Navbar } from "@/components/layout/Navbar";
-import { cn } from "@/lib/utils";
 import { VerseDetail } from "@/components/verses/VerseDetail";
-import { OnboardingModal } from "@/components/auth/OnboardingModal";
-import { useProgress } from "@/hooks/useProgress";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Verse } from "@/types";
+import { cn } from "@/lib/utils";
+
+import confetti from "canvas-confetti";
+import { useProgress } from "@/hooks/useProgress";
 import { useLanguage } from "@/context/LanguageContext";
 import { UI_TEXT } from "@/data/translations";
 
-const FREE_VERSE_LIMIT = 4;
+import { OnboardingModal } from "@/components/auth/OnboardingModal";
+import { useProfile } from "@/hooks/useProfile";
+import { useCustomSeries } from "@/hooks/useCustomSeries";
+import { Navbar } from "@/components/layout/Navbar";
 
-export default function SharedSeriesPage() {
-    const router = useRouter();
+export default function CustomSeriesPage() {
     const params = useParams();
-    const shareId = params.shareId as string;
-
+    const router = useRouter();
     const { user } = useAuth();
     const { profile } = useProfile();
-    const { importSharedSeries } = useCustomSeries();
     const { language } = useLanguage();
-    const isPremium = profile?.isPremium ?? false;
+    const id = params?.id as string;
 
-    const [shared, setShared] = useState<SharedSeries | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [notFound, setNotFound] = useState(false);
-    const [importing, setImporting] = useState(false);
-    const [imported, setImported] = useState(false);
+    const { series: customSeriesList, loading: seriesLoading } = useCustomSeries();
 
+    const series = customSeriesList.find(s => s.id === id);
+    const verses = series?.verses || [];
+
+    const mapToVerse = (v: any, idx: number): Verse => ({ ...v, seriesId: id, order: idx + 1, tags: [] });
+
+    const { progress, isMemorized, getCompletedCount } = useProgress(id);
     const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+    // Smart Resume: start null, set after progress loads
     const [activeVerse, setActiveVerse] = useState<Verse | null>(null);
+    const hasResumed = useRef(false);
 
-    const { progress, isMemorized, getCompletedCount } = useProgress(shareId); // progress is tied to shareId for anon/auth
-
-    const mapToVerse = (v: any, idx: number): Verse => ({ ...v, seriesId: shareId, order: idx + 1, tags: [] });
-
+    // Smart Resume: jump to first unmemorized verse on initial progress load
     useEffect(() => {
-        if (!shareId) return;
-        getDoc(doc(db, "shared_series", shareId)).then(snap => {
-            if (!snap.exists()) { setNotFound(true); }
-            else {
-                const data = snap.data() as SharedSeries;
-                setShared(data);
-                if (data.verses.length > 0) setActiveVerse(mapToVerse(data.verses[0], 0));
-            }
-            setLoading(false);
-        });
-    }, [shareId]);
+        if (hasResumed.current || !progress || verses.length === 0) return;
+        hasResumed.current = true;
+        const completedIds = progress.completedVerses[language] || [];
+        const firstUnmemorizedIdx = verses.findIndex(v => !completedIds.includes(v.id));
+        if (firstUnmemorizedIdx !== -1) {
+            setActiveVerse(mapToVerse(verses[firstUnmemorizedIdx], firstUnmemorizedIdx));
+        } else {
+            setActiveVerse(mapToVerse(verses[0], 0));
+        }
+    }, [progress, language, verses, id]);
 
-    const handleImport = async () => {
-        if (!user) { router.push("/"); return; }
-        if (!shared || importing) return;
-        setImporting(true);
-        await importSharedSeries(shared);
-        setImported(true);
-        setImporting(false);
+    const isPremium = profile?.isPremium || false;
+
+    const handleRestrictedAction = () => {
+        setIsOnboardingOpen(true);
     };
 
-    if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-stone-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-800" />
-        </div>
-    );
-
-    if (notFound || !shared) return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-stone-50 gap-4 px-6 text-center">
-            <div className="text-5xl">📭</div>
-            <h2 className="text-2xl font-bold text-stone-900">시리즈를 찾을 수 없어요</h2>
-            <p className="text-stone-400 text-sm">링크가 만료되었거나 삭제된 시리즈입니다.</p>
-            <button onClick={() => router.push("/")} className="mt-2 bg-stone-900 text-white px-6 py-3 rounded-xl font-bold text-sm">
-                홈으로
-            </button>
-        </div>
-    );
-
-    const totalVerses = shared?.verses.length || 0;
-    const activeIndex = activeVerse && shared ? shared.verses.findIndex(v => v.id === activeVerse.id) : 0;
     const completedCount = getCompletedCount(language);
+    const totalVerses = verses.length;
+    const progressPercentage = Math.round((completedCount / totalVerses) * 100) || 0;
+    const isCompleted = totalVerses > 0 && completedCount === totalVerses;
+
+    useEffect(() => {
+        if (isCompleted) {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FFD700', '#FFA500', '#FF4500', '#ffffff'],
+            });
+        }
+    }, [isCompleted]);
+
+    if (seriesLoading) {
+        return (
+            <div className="h-screen bg-[#fdfbf7] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+            </div>
+        );
+    }
+
+    if (!series) {
+        return (
+            <div className="h-screen bg-[#fdfbf7] flex flex-col">
+                <Navbar className="bg-white border-b border-stone-100" />
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <p className="text-stone-500 mb-4 font-medium text-lg">Custom series not found.</p>
+                    <button
+                        onClick={() => router.push('/profile')}
+                        className="bg-stone-900 text-white px-6 py-2.5 rounded-full font-bold text-sm hover:bg-stone-800 transition-colors"
+                    >
+                        Return to Profile
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const activeIndex = activeVerse ? verses.findIndex(v => v.id === activeVerse.id) : 0;
 
     return (
         <div className="h-screen bg-[#fdfbf7] flex flex-col overflow-hidden">
-            <Navbar className="bg-white border-b border-stone-100" />
-
             <OnboardingModal
                 isOpen={isOnboardingOpen}
                 onClose={() => setIsOnboardingOpen(false)}
                 startAtPayment={!!user}
             />
 
+            {/* Navbar */}
+            <Navbar className="bg-white border-b border-stone-100" />
+
             {/* Compact Header Bar */}
-            <div className="bg-white border-b border-stone-100 px-4 md:px-8 py-2.5 flex items-center justify-between sticky top-[57px] z-30 shadow-sm gap-4">
-                <div className="flex items-center gap-4 min-w-0 flex-1">
-                    <button
-                        onClick={() => router.push("/")}
-                        className="flex items-center gap-1.5 text-stone-500 hover:text-stone-800 transition-colors flex-shrink-0"
-                    >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                        <span className="text-sm font-medium hidden sm:inline">{UI_TEXT.detail.back[language]}</span>
-                    </button>
-                    <span className="text-stone-300 hidden sm:inline">|</span>
-                    <h1 className="text-sm font-bold text-stone-800 truncate">
-                        {shared.title} <span className="text-xs text-stone-400 font-normal">by {shared.ownerName}</span>
-                    </h1>
+            <div className="bg-white border-b border-stone-100 px-4 md:px-8 py-2.5 flex items-center gap-4 sticky top-[57px] z-30 shadow-sm">
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-1.5 text-stone-500 hover:text-stone-800 transition-colors flex-shrink-0"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span className="text-sm font-medium hidden sm:inline">{UI_TEXT.detail.back[language]}</span>
+                </button>
+
+                <span className="text-stone-300 hidden sm:inline">|</span>
+
+                <h1 className="text-sm font-bold text-stone-800 truncate flex-shrink min-w-0">
+                    {series.title}
+                </h1>
+
+                <div className="flex-1 flex items-center gap-3 min-w-0">
+                    <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+                            style={{ width: `${progressPercentage}%` }}
+                        />
+                    </div>
+                    <span className="text-xs font-semibold text-stone-500 whitespace-nowrap flex-shrink-0">
+                        {completedCount}/{totalVerses}
+                    </span>
                 </div>
 
-                {!imported && (
-                    <button
-                        onClick={handleImport}
-                        disabled={importing}
-                        className="bg-amber-500 hover:bg-amber-400 text-white font-bold px-4 py-1.5 rounded-full text-xs transition-all shadow-sm flex-shrink-0 disabled:opacity-50"
-                    >
-                        {importing ? "..." : user ? "내 시리즈에 추가" : "로그인 후 추가"}
-                    </button>
-                )}
-                {imported && (
-                    <span className="text-emerald-600 font-bold text-xs flex items-center gap-1 flex-shrink-0">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                        추가됨
-                    </span>
+                {isCompleted && (
+                    <span className="text-emerald-500 text-sm font-bold animate-pulse flex-shrink-0">🎉</span>
                 )}
             </div>
 
@@ -142,7 +159,7 @@ export default function SharedSeriesPage() {
                                     <VerseDetail
                                         verse={activeVerse}
                                         language={language}
-                                        onRestrictedAction={(!isPremium && activeIndex >= FREE_VERSE_LIMIT) ? () => setIsOnboardingOpen(true) : undefined}
+                                        onRestrictedAction={(!isPremium && activeIndex >= 4) ? handleRestrictedAction : undefined}
                                         onLoginRequired={() => setIsOnboardingOpen(true)}
                                     />
 
@@ -150,7 +167,7 @@ export default function SharedSeriesPage() {
                                     <div className="mt-5 flex items-center justify-between">
                                         <button
                                             onClick={() => {
-                                                if (activeIndex > 0) setActiveVerse(mapToVerse(shared.verses[activeIndex - 1], activeIndex - 1));
+                                                if (activeIndex > 0) setActiveVerse(mapToVerse(verses[activeIndex - 1], activeIndex - 1));
                                             }}
                                             disabled={activeIndex === 0}
                                             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
@@ -165,15 +182,15 @@ export default function SharedSeriesPage() {
                                         </span>
                                         <button
                                             onClick={() => {
-                                                if (activeIndex < shared.verses.length - 1) {
-                                                    if (activeIndex + 1 >= FREE_VERSE_LIMIT && !isPremium) {
-                                                        setIsOnboardingOpen(true);
+                                                if (activeIndex < verses.length - 1) {
+                                                    if (activeIndex + 1 >= 4 && !isPremium) {
+                                                        handleRestrictedAction();
                                                     } else {
-                                                        setActiveVerse(mapToVerse(shared.verses[activeIndex + 1], activeIndex + 1));
+                                                        setActiveVerse(mapToVerse(verses[activeIndex + 1], activeIndex + 1));
                                                     }
                                                 }
                                             }}
-                                            disabled={activeIndex === shared.verses.length - 1}
+                                            disabled={activeIndex === verses.length - 1}
                                             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                         >
                                             Next
@@ -183,24 +200,28 @@ export default function SharedSeriesPage() {
                                         </button>
                                     </div>
                                 </>
-                            ) : null}
+                            ) : (
+                                <div className="flex items-center justify-center h-48 text-stone-400">
+                                    Select a verse to begin
+                                </div>
+                            )}
 
-                            {/* Mobile: Inline verse list */}
+                            {/* Mobile: Inline verse list below the card */}
                             <div className="md:hidden mt-8">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3">
-                                    {shared.title} · {totalVerses} verses
+                                    Memory Queue · {totalVerses} verses
                                 </p>
                                 <div className="flex flex-col divide-y divide-stone-100 rounded-2xl bg-white shadow-sm overflow-hidden border border-stone-100">
-                                    {shared.verses.map((verse, idx) => {
+                                    {verses.map((verse, idx) => {
                                         const isVerseMemorized = isMemorized(verse.id);
-                                        const isLocked = idx >= FREE_VERSE_LIMIT && !isPremium;
+                                        const isLocked = idx >= 4 && !isPremium;
                                         const isActive = activeVerse?.id === verse.id;
                                         return (
                                             <button
                                                 key={verse.id}
                                                 onClick={() => {
                                                     if (isLocked) {
-                                                        setIsOnboardingOpen(true);
+                                                        handleRestrictedAction();
                                                     } else {
                                                         setActiveVerse(mapToVerse(verse, idx));
                                                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -213,7 +234,7 @@ export default function SharedSeriesPage() {
                                             >
                                                 <div className={cn(
                                                     "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5",
-                                                    isActive ? "bg-white/20 text-white" : isVerseMemorized ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-400"
+                                                    isActive ? "bg-white/20 text-white" : isVerseMemorized ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-400"
                                                 )}>
                                                     {isVerseMemorized && !isActive ? (
                                                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -230,12 +251,12 @@ export default function SharedSeriesPage() {
                                                     </div>
                                                 </div>
                                                 {isLocked && (
-                                                    <svg className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 24 24">
                                                         <path fillRule="evenodd" d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm3 8V6a3 3 0 10-6 0v3h6zm-3 4a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z" clipRule="evenodd" />
                                                     </svg>
                                                 )}
                                                 {isVerseMemorized && !isLocked && !isActive && (
-                                                    <span className="flex-shrink-0 text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded uppercase">done</span>
+                                                    <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase">done</span>
                                                 )}
                                             </button>
                                         );
@@ -248,20 +269,20 @@ export default function SharedSeriesPage() {
                         <div className="hidden md:flex flex-col w-72 lg:w-80 flex-shrink-0 bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden sticky top-4 max-h-[calc(100vh-120px)]">
                             <div className="px-4 py-3 border-b border-stone-50 flex-shrink-0">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                    {shared.title} · {totalVerses} verses
+                                    Memory Queue · {totalVerses} verses
                                 </p>
                             </div>
                             <div className="flex-1 overflow-y-auto">
-                                {shared.verses.map((verse, idx) => {
+                                {verses.map((verse, idx) => {
                                     const isVerseMemorized = isMemorized(verse.id);
-                                    const isLocked = idx >= FREE_VERSE_LIMIT && !isPremium;
+                                    const isLocked = idx >= 4 && !isPremium;
                                     const isActive = activeVerse?.id === verse.id;
                                     return (
                                         <button
                                             key={verse.id}
                                             onClick={() => {
                                                 if (isLocked) {
-                                                    setIsOnboardingOpen(true);
+                                                    handleRestrictedAction();
                                                 } else {
                                                     setActiveVerse(mapToVerse(verse, idx));
                                                 }
@@ -273,7 +294,7 @@ export default function SharedSeriesPage() {
                                         >
                                             <div className={cn(
                                                 "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5",
-                                                isActive ? "bg-white/20 text-white" : isVerseMemorized ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-400"
+                                                isActive ? "bg-white/20 text-white" : isVerseMemorized ? "bg-emerald-100 text-emerald-700" : "bg-stone-100 text-stone-400"
                                             )}>
                                                 {isVerseMemorized && !isActive ? (
                                                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -290,12 +311,12 @@ export default function SharedSeriesPage() {
                                                 </div>
                                             </div>
                                             {isLocked && (
-                                                <svg className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 24 24">
                                                     <path fillRule="evenodd" d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm3 8V6a3 3 0 10-6 0v3h6zm-3 4a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1z" clipRule="evenodd" />
                                                 </svg>
                                             )}
                                             {isVerseMemorized && !isLocked && !isActive && (
-                                                <span className="flex-shrink-0 text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded uppercase">done</span>
+                                                <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase">done</span>
                                             )}
                                         </button>
                                     );

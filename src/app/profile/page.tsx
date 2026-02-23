@@ -18,15 +18,18 @@ function CustomSeriesCard({
     cs,
     onDelete,
     onShare,
+    language
 }: {
     cs: CustomSeries;
     onDelete: (id: string) => Promise<void>;
     onShare: (cs: CustomSeries) => Promise<void>;
+    language: 'ko' | 'en' | 'zh' | 'es' | 'de' | 'fr';
 }) {
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [sharing, setSharing] = useState(false);
     const [shareUrl, setShareUrl] = useState<string | null>(cs.shareId ? `${typeof window !== "undefined" ? window.location.origin : ""}/shared/${cs.shareId}` : null);
+    const router = useRouter();
 
     const handleDelete = async () => {
         setDeleting(true);
@@ -41,23 +44,31 @@ function CustomSeriesCard({
             const url = `${window.location.origin}/shared/${cs.shareId ?? `${cs.id}`}`;
             setShareUrl(url);
             await navigator.clipboard.writeText(url);
-            alert("링크가 복사됐어요! 텔레그램에 붙여넣기 해보세요 🙌");
+            alert(UI_TEXT.profile.linkCopied[language]);
         } finally {
             setSharing(false);
         }
     };
 
-    const copyShareUrl = async () => {
+    const copyShareUrl = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         if (!shareUrl) return;
         await navigator.clipboard.writeText(shareUrl);
-        alert("링크가 복사됐어요! 🙌");
+        alert(UI_TEXT.profile.linkCopied[language]);
+    };
+
+    const handleCardClick = () => {
+        router.push(`/custom-series/${cs.id}`);
     };
 
     return (
-        <div className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm flex flex-col gap-3">
+        <div
+            onClick={handleCardClick}
+            className="bg-white rounded-2xl p-5 border border-stone-100 shadow-sm flex flex-col gap-3 cursor-pointer hover:border-emerald-200 hover:shadow-md transition-all group"
+        >
             <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-stone-900 truncate">{cs.title}</h3>
+                    <h3 className="font-bold text-stone-900 truncate group-hover:text-emerald-700 transition-colors">{cs.title}</h3>
                     {cs.description && (
                         <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">{cs.description}</p>
                     )}
@@ -65,28 +76,28 @@ function CustomSeriesCard({
                 {/* Delete button */}
                 {!confirmDelete ? (
                     <button
-                        onClick={() => setConfirmDelete(true)}
+                        onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
                         className="text-stone-300 hover:text-red-400 transition-colors flex-shrink-0 p-1"
-                        title="삭제"
+                        title={UI_TEXT.profile.delete[language]}
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                     </button>
                 ) : (
-                    <div className="flex gap-1 items-center flex-shrink-0">
+                    <div className="flex gap-1 items-center flex-shrink-0" onClick={e => e.stopPropagation()}>
                         <button
                             onClick={handleDelete}
                             disabled={deleting}
                             className="text-xs font-bold text-white bg-red-500 hover:bg-red-400 px-2 py-1 rounded-lg disabled:opacity-50 transition-colors"
                         >
-                            {deleting ? "..." : "삭제"}
+                            {deleting ? "..." : UI_TEXT.profile.delete[language]}
                         </button>
                         <button
                             onClick={() => setConfirmDelete(false)}
                             className="text-xs text-stone-400 hover:text-stone-600 px-2 py-1"
                         >
-                            취소
+                            {UI_TEXT.profile.cancel[language]}
                         </button>
                     </div>
                 )}
@@ -94,7 +105,7 @@ function CustomSeriesCard({
 
             <div className="flex items-center gap-2">
                 <span className="text-xs bg-amber-50 text-amber-700 font-bold px-2.5 py-1 rounded-full">
-                    {cs.verses.length}구절
+                    {cs.verses.length} {UI_TEXT.profile.versesCount[language]}
                 </span>
                 <span className="text-xs text-stone-400">
                     {new Date(cs.createdAt).toLocaleDateString()}
@@ -102,7 +113,7 @@ function CustomSeriesCard({
             </div>
 
             {/* Share row */}
-            <div className="border-t border-stone-50 pt-3 flex items-center gap-2">
+            <div className="border-t border-stone-50 pt-3 flex items-center gap-2" onClick={e => e.stopPropagation()}>
                 {shareUrl ? (
                     <button
                         onClick={copyShareUrl}
@@ -111,18 +122,18 @@ function CustomSeriesCard({
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
-                        링크 복사
+                        {UI_TEXT.profile.copyLink[language]}
                     </button>
                 ) : (
                     <button
-                        onClick={handleShare}
+                        onClick={(e) => { e.stopPropagation(); handleShare(); }}
                         disabled={sharing}
                         className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 font-medium disabled:opacity-50"
                     >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                         </svg>
-                        {sharing ? "공유 중..." : "공유하기"}
+                        {sharing ? UI_TEXT.profile.sharing[language] : UI_TEXT.profile.share[language]}
                     </button>
                 )}
                 {shareUrl && (
@@ -132,6 +143,8 @@ function CustomSeriesCard({
         </div>
     );
 }
+
+import { UI_TEXT } from "@/data/translations";
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth();
@@ -220,7 +233,7 @@ export default function ProfilePage() {
                         {customSeries.length > 0 && (
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-serif font-bold text-stone-900 pl-2 border-l-4 border-emerald-400">
-                                    내 커스텀 시리즈
+                                    {UI_TEXT.profile.myCustomSeries[language]}
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {customSeries.map(cs => (
@@ -229,17 +242,18 @@ export default function ProfilePage() {
                                             cs={cs}
                                             onDelete={deleteSeries}
                                             onShare={handlePublish}
+                                            language={language}
                                         />
                                     ))}
                                 </div>
                                 <div className="text-center mt-6">
                                     {profile?.isPremium ? (
                                         <Link href="/bible" className="text-sm text-stone-600 hover:text-stone-900 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
-                                            + 내 커스텀 시리즈 만들기
+                                            {UI_TEXT.profile.createCustomSeries[language]}
                                         </Link>
                                     ) : (
                                         <Link href="/pricing" className="text-sm text-amber-600 hover:text-amber-700 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
-                                            + 내 커스텀 시리즈 만들기 (유료회원 전용)
+                                            {UI_TEXT.profile.createCustomPremium[language]}
                                         </Link>
                                     )}
                                 </div>
@@ -253,27 +267,27 @@ export default function ProfilePage() {
                                     My Series
                                 </h2>
                                 <div className="bg-white rounded-2xl p-8 text-center border border-stone-100 border-dashed">
-                                    <p className="text-stone-500 mb-4">아직 시작한 시리즈가 없어요.</p>
+                                    <p className="text-stone-500 mb-4">{UI_TEXT.profile.noSeries[language]}</p>
                                     <div className="flex gap-3 justify-center flex-wrap">
                                         <button
                                             onClick={() => router.push("/#series")}
                                             className="bg-stone-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-stone-800 transition-colors text-sm"
                                         >
-                                            Browse Series
+                                            {UI_TEXT.profile.browseSeries[language]}
                                         </button>
                                         {profile?.isPremium ? (
                                             <Link
                                                 href="/bible"
                                                 className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-400 transition-colors text-sm"
                                             >
-                                                내 커스텀 시리즈 만들기
+                                                {UI_TEXT.profile.createCustomSeries[language]}
                                             </Link>
                                         ) : (
                                             <Link
                                                 href="/pricing"
                                                 className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-400 transition-colors text-sm"
                                             >
-                                                내 커스텀 시리즈 만들기 (유료회원 전용)
+                                                {UI_TEXT.profile.createCustomPremium[language]}
                                             </Link>
                                         )}
                                     </div>
@@ -284,11 +298,11 @@ export default function ProfilePage() {
                                 <div className="pt-8 border-t border-stone-100 text-center">
                                     {profile?.isPremium ? (
                                         <Link href="/bible" className="text-sm text-stone-600 hover:text-stone-900 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
-                                            + 내 커스텀 시리즈 만들기
+                                            {UI_TEXT.profile.createCustomSeries[language]}
                                         </Link>
                                     ) : (
                                         <Link href="/pricing" className="text-sm text-amber-600 hover:text-amber-700 font-medium hover:underline underline-offset-2 flex justify-center items-center gap-2">
-                                            + 내 커스텀 시리즈 만들기 (유료회원 전용)
+                                            {UI_TEXT.profile.createCustomPremium[language]}
                                         </Link>
                                     )}
                                 </div>

@@ -58,6 +58,20 @@ export const UI_TEXT = {
         recording: { en: "Recording… (max 2 min)", ko: "녹음 중… (최대 2분)", zh: "录音中…（最多2分钟）", es: "Grabando… (máx. 2 min)", de: "Aufnahme… (max. 2 Min.)", fr: "Enregistrement… (max. 2 min)" },
         saving: { en: "Saving…", ko: "저장 중…", zh: "保存中…", es: "Guardando…", de: "Speichern…", fr: "Enregistrement…" },
     },
+    profile: {
+        myCustomSeries: { en: "My Custom Series", ko: "내 커스텀 시리즈", zh: "我的自定义系列", es: "Mis Series Personalizadas", de: "Meine eigenen Serien", fr: "Mes Séries Personnalisées" },
+        createCustomSeries: { en: "+ Create Custom Series", ko: "+ 커스텀 시리즈 만들기", zh: "+ 创建自定义系列", es: "+ Crear Serie Personalizada", de: "+ Eigene Serie erstellen", fr: "+ Créer une Série Personnalisée" },
+        createCustomPremium: { en: "+ Create Custom Series (Premium Only)", ko: "+ 커스텀 시리즈 만들기 (유료회원 전용)", zh: "+ 创建自定义系列（仅限高级会员）", es: "+ Crear Serie (Solo Premium)", de: "+ Eigene Serie erstellen (Nur Premium)", fr: "+ Créer une Série (Premium Uniquement)" },
+        versesCount: { en: "verses", ko: "구절", zh: "节", es: "versículos", de: "Verse", fr: "versets" },
+        delete: { en: "Delete", ko: "삭제", zh: "删除", es: "Eliminar", de: "Löschen", fr: "Supprimer" },
+        cancel: { en: "Cancel", ko: "취소", zh: "取消", es: "Cancelar", de: "Abbrechen", fr: "Annuler" },
+        copyLink: { en: "Copy Link", ko: "링크 복사", zh: "复制链接", es: "Copiar Enlace", de: "Link kopieren", fr: "Copier le lien" },
+        linkCopied: { en: "Link copied! Share it on Telegram 🙌", ko: "링크가 복사됐어요! 텔레그램으로 공유해보세요 🙌", zh: "链接已复制！在Telegram上分享吧 🙌", es: "¡Enlace copiado! Compártelo en Telegram 🙌", de: "Link kopiert! Teile ihn auf Telegram 🙌", fr: "Lien copié ! Partagez-le sur Telegram 🙌" },
+        share: { en: "Share", ko: "공유하기", zh: "分享", es: "Compartir", de: "Teilen", fr: "Partager" },
+        sharing: { en: "Sharing...", ko: "공유 중...", zh: "分享中...", es: "Compartiendo...", de: "Teilen...", fr: "Partage..." },
+        noSeries: { en: "You haven't started any series yet.", ko: "아직 시작한 시리즈가 없어요.", zh: "您还没有开始任何系列。", es: "Aún no has empezado ninguna serie.", de: "Du hast noch keine Serie begonnen.", fr: "Vous n'avez pas encore commencé de série." },
+        browseSeries: { en: "Browse Series", ko: "시리즈 둘러보기", zh: "浏览系列", es: "Explorar Series", de: "Serien durchsuchen", fr: "Parcourir les Séries" }
+    },
     hero: {
         title: {
             en: "Miracle Bible Memorization\nStart Now!",
