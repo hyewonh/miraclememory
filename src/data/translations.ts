@@ -57,6 +57,9 @@ export const UI_TEXT = {
         memorizeThisVerse: { en: "MEMORIZE THIS VERSE", ko: "이 구절 암송하기", zh: "背诵此经文", es: "MEMORIZAR ESTE VERSÍCULO", de: "DIESEN VERS AUSWENDIG LERNEN", fr: "MÉMORISER CE VERSET" },
         recording: { en: "Recording… (max 2 min)", ko: "녹음 중… (최대 2분)", zh: "录音中…（最多2分钟）", es: "Grabando… (máx. 2 min)", de: "Aufnahme… (max. 2 Min.)", fr: "Enregistrement… (max. 2 min)" },
         saving: { en: "Saving…", ko: "저장 중…", zh: "保存中…", es: "Guardando…", de: "Speichern…", fr: "Enregistrement…" },
+        shadowRepeat: { en: "Recite 5 times — words fade each round", ko: "5번 따라 말해보세요 — 매 회차마다 단어가 사라져요", zh: "朗诵5次 — 每轮单词会消失", es: "Recita 5 veces — las palabras se desvanecen", de: "5x aufsagen — Wörter verschwinden", fr: "Récitez 5 fois — les mots disparaissent" },
+        shadowProgress: { en: "done", ko: "완료", zh: "完成", es: "hecho", de: "fertig", fr: "terminé" },
+        shadowComplete: { en: "🎉 Well done!", ko: "🎉 잘 하셨어요!", zh: "🎉 做得好！", es: "🎉 ¡Bien hecho!", de: "🎉 Gut gemacht!", fr: "🎉 Bien joué !" },
     },
     profile: {
         myCustomSeries: { en: "My Custom Series", ko: "내 커스텀 시리즈", zh: "我的自定义系列", es: "Mis Series Personalizadas", de: "Meine eigenen Serien", fr: "Mes Séries Personnalisées" },

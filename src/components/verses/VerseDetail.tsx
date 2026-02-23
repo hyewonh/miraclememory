@@ -621,9 +621,11 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                     </div>
                 )}
 
-                {/* ─── STEP 3: Shadowing — 첫 글자 + 5번 체크 ──────── */}
+                {/* ─── STEP 3: Shadowing — Progressive word hiding ────── */}
                 {practiceStep === 3 && (() => {
-                    const words = getFirstLetters(liveText);
+                    const words = liveText.split(' ').filter(w => w.length > 0);
+                    const totalWords = words.length;
+                    const completedReps = shadowReps.filter(Boolean).length;
                     const allShadowRepsChecked = shadowReps.every(Boolean);
 
                     // When all 5 reps checked, mark done
@@ -632,25 +634,91 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                         setShadowDone(true);
                     }
 
+                    // Calculate which words to hide based on completed reps
+                    // Rep 0 (initial): ~20% hidden (2-3 words)
+                    // Rep 1: ~40% hidden
+                    // Rep 2: ~60% hidden
+                    // Rep 3: ~80% hidden
+                    // Rep 4: first-letter only (all hidden except first char)
+                    // Rep 5: everything hidden (gray dots)
+                    const getHiddenWordIndices = (): Set<number> => {
+                        // Use verse id as seed for consistent randomness
+                        const seed = verse.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+                        const shuffled = words.map((_, i) => i)
+                            .sort((a, b) => {
+                                const va = ((a + seed) * 2654435761) % 4294967296;
+                                const vb = ((b + seed) * 2654435761) % 4294967296;
+                                return va - vb;
+                            });
+
+                        let hideCount = 0;
+                        if (completedReps === 0) hideCount = Math.max(2, Math.ceil(totalWords * 0.2));
+                        else if (completedReps === 1) hideCount = Math.ceil(totalWords * 0.4);
+                        else if (completedReps === 2) hideCount = Math.ceil(totalWords * 0.6);
+                        else if (completedReps === 3) hideCount = Math.ceil(totalWords * 0.8);
+                        else hideCount = totalWords; // 4+ → all hidden
+
+                        return new Set(shuffled.slice(0, hideCount));
+                    };
+
+                    const hiddenSet = getHiddenWordIndices();
+                    const showFirstLetterOnly = completedReps >= 4;
+                    const showAllHidden = completedReps >= 5;
+
                     return (
                         <div className="flex flex-col items-center gap-6 w-full">
-                            {/* First-letter hints only */}
-                            <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed flex flex-wrap justify-center items-center text-center gap-x-2">
-                                {words.map((w, i) => (
-                                    <span key={i} className="inline-flex items-center gap-[2px]">
-                                        <span className="text-rose-600 font-bold">{w.first}</span>
-                                        {Array.from({ length: w.rest.length }).map((_, j) => (
-                                            <span key={j} className="inline-block rounded-full bg-stone-300"
-                                                style={{ width: '0.5em', height: '0.5em' }} />
-                                        ))}
-                                    </span>
-                                ))}
+                            {/* Progressive text display */}
+                            <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed flex flex-wrap justify-center items-center text-center gap-x-2 transition-all duration-500">
+                                {words.map((word, i) => {
+                                    const isHidden = hiddenSet.has(i) || showFirstLetterOnly;
+
+                                    if (showAllHidden) {
+                                        // Round 5: everything is gray dots
+                                        return (
+                                            <span key={i} className="inline-flex items-center gap-[2px]">
+                                                {Array.from({ length: word.length }).map((_, j) => (
+                                                    <span key={j} className="inline-block rounded-full bg-stone-300"
+                                                        style={{ width: '0.5em', height: '0.5em' }} />
+                                                ))}
+                                            </span>
+                                        );
+                                    }
+
+                                    if (showFirstLetterOnly) {
+                                        // Round 4: first letter only + dots
+                                        return (
+                                            <span key={i} className="inline-flex items-center gap-[2px]">
+                                                <span className="text-rose-600 font-bold">{word[0]}</span>
+                                                {Array.from({ length: word.length - 1 }).map((_, j) => (
+                                                    <span key={j} className="inline-block rounded-full bg-stone-300"
+                                                        style={{ width: '0.5em', height: '0.5em' }} />
+                                                ))}
+                                            </span>
+                                        );
+                                    }
+
+                                    if (isHidden) {
+                                        // Hidden word: first letter visible + dots for the rest
+                                        return (
+                                            <span key={i} className="inline-flex items-center gap-[2px]">
+                                                <span className="text-rose-600 font-bold">{word[0]}</span>
+                                                {Array.from({ length: word.length - 1 }).map((_, j) => (
+                                                    <span key={j} className="inline-block rounded-full bg-stone-300"
+                                                        style={{ width: '0.5em', height: '0.5em' }} />
+                                                ))}
+                                            </span>
+                                        );
+                                    }
+
+                                    // Visible word
+                                    return <span key={i} className="text-stone-900">{word}</span>;
+                                })}
                             </div>
                             <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
                             <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} onStepClick={handleStepClick} />
 
                             <div className="bg-stone-50 rounded-2xl p-6 border border-stone-100 w-full flex flex-col items-center gap-5">
-                                <p className="text-xs text-stone-400 font-medium uppercase tracking-widest">5번 따라 말해보세요</p>
+                                <p className="text-xs text-stone-400 font-medium uppercase tracking-widest text-center">{tl(t.shadowRepeat)}</p>
 
                                 {/* 5 repeat check buttons */}
                                 <div className="flex items-center gap-3">
@@ -658,7 +726,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                         <button
                                             key={i}
                                             onClick={() => {
-                                                if (checked) return; // can't uncheck
+                                                if (checked) return;
                                                 const updated = [...shadowReps];
                                                 updated[i] = true;
                                                 setShadowReps(updated);
@@ -677,11 +745,11 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
                                 {/* Progress text */}
                                 <p className="text-sm text-stone-500">
-                                    {shadowReps.filter(Boolean).length} / 5 완료
+                                    {completedReps} / 5 {tl(t.shadowProgress)}
                                 </p>
 
                                 {allShadowRepsChecked && (
-                                    <div className="text-emerald-600 text-sm font-bold animate-in fade-in">🎉 잘 하셨어요!</div>
+                                    <div className="text-emerald-600 text-sm font-bold animate-in fade-in">{tl(t.shadowComplete)}</div>
                                 )}
                             </div>
 
