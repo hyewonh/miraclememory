@@ -699,7 +699,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                         {/* Step Indicator — clickable */}
                         <StepIndicator currentStep={practiceStep} stepDone={stepDone} labels={stepLabels} onStepClick={handleStepClick} />
                         <InlineTypeTest
-                            text={liveText}
+                            text={verse.text[language]}
                             language={language}
                             onClose={() => { setPracticeStep(3); setStepDone(p => ({ ...p, 3: false, 4: false })); setLoopCount(0); }}
                             onComplete={() => {
