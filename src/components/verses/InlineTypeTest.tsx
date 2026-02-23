@@ -26,7 +26,6 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const completedFired = useRef(false);
 
     const fullText = text;
-    const totalTypeable = fullText.length;
 
     // Focus on mount
     useEffect(() => {
@@ -50,30 +49,55 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     }, []);
 
     // Characters that should be auto-filled/ignored when typing
-    const isAutoFillChar = (char: string) => /[,.:;?!"\-]/.test(char);
+    // Expanded to include common punctuation in English, Korean, Chinese, Spanish, French, German
+    const isAutoFillChar = (char: string) => /[\s,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝－｀：；"＇＜＞，．？/]/.test(char) || char === ' ';
+
+    // Use Intl.Segmenter to correctly split multi-byte characters like Korean
+    const stringToChars = (str: string) => {
+        if (!str) return [];
+        const segmenter = new Intl.Segmenter(language === 'en' ? 'en' : 'ko', { granularity: 'grapheme' });
+        return Array.from(segmenter.segment(str)).map(seg => seg.segment);
+    };
+
+    const fullTextChars = stringToChars(fullText);
+    const totalTypeable = fullTextChars.length;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (completed) return;
         const val = e.target.value;
 
+        // Fast path for native typing (especially IME on mobile/Korean)
+        // We let the input value update and treat its length as the cursor position
+        const typedChars = stringToChars(typed);
+
         let newTyped = val;
+        let newTypedChars = stringToChars(newTyped);
 
         // Auto-fill logic
-        // If user typed a character, check if the next expected character in fullText is an auto-fill char.
-        // If so, append it to newTyped (and keep doing so if there are multiple consecutive auto-fill chars).
-        if (newTyped.length > typed.length) { // user is adding chars
-            while (newTyped.length < fullText.length && isAutoFillChar(fullText[newTyped.length])) {
-                newTyped += fullText[newTyped.length];
+        if (newTypedChars.length > typedChars.length) { // user added chars
+            // Check if next char in target is auto-fill
+            while (newTypedChars.length < fullTextChars.length && isAutoFillChar(fullTextChars[newTypedChars.length])) {
+                newTyped += fullTextChars[newTypedChars.length];
+                newTypedChars = stringToChars(newTyped);
             }
         } else {
             // If user is deleting (backspace), and they delete into an auto-fill char, 
-            // we should delete the auto-fill chars as well so they don't get stuck.
-            while (newTyped.length > 0 && isAutoFillChar(newTyped[newTyped.length - 1])) {
-                newTyped = newTyped.slice(0, -1);
+            // delete the auto-fill chars as well so they don't get stuck.
+            while (newTypedChars.length > 0 && isAutoFillChar(newTypedChars[newTypedChars.length - 1])) {
+                newTyped = newTyped.slice(0, -newTypedChars[newTypedChars.length - 1].length);
+                newTypedChars = stringToChars(newTyped);
             }
         }
 
+        // Prevent typing beyond the length
+        if (newTypedChars.length > fullTextChars.length) {
+            newTyped = newTypedChars.slice(0, fullTextChars.length).join('');
+            newTypedChars = stringToChars(newTyped);
+        }
+
         setTyped(newTyped);
+
+        // Check completion right away using characters
         if (newTyped === fullText && !completedFired.current) {
             completedFired.current = true;
             setCompleted(true);
@@ -90,13 +114,18 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         }
     };
 
+    const typedCharsState = stringToChars(typed);
+
     const getCharState = (idx: number): CharState => {
-        if (idx >= typed.length) return "hidden";
-        return typed[idx] === fullText[idx] ? "correct" : "wrong";
+        if (idx >= typedCharsState.length) return "hidden";
+        // Convert input Korean characters to initial consonants for comparison if needed, 
+        // but for now strict comparison is safer for completion. However, Korean IME builds characters
+        // incrementally. If the full character is matched, it's correct.
+        return typedCharsState[idx] === fullTextChars[idx] ? "correct" : "wrong";
     };
 
-    // Current cursor position = typed.length (next char to type)
-    const cursorPos = typed.length;
+    // Current cursor position = typedCharsState.length (next char to type)
+    const cursorPos = typedCharsState.length;
 
     return (
         <div className="w-full">
@@ -136,9 +165,11 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
                 {/* Visual render — character by character */}
                 <div className="text-xl md:text-2xl font-reading font-bold leading-relaxed flex flex-wrap justify-center items-center min-h-[4rem]">
-                    {Array.from(fullText).map((char, idx) => {
+                    {fullTextChars.map((char, idx) => {
                         const state = getCharState(idx);
-                        const isFirstOfWord = idx === 0 || fullText[idx - 1] === ' ';
+                        // For first letter hinting, we treat space-separated items as words.
+                        // Wait, to calculate if a character is first of word, we look at the raw string
+                        const isFirstOfWord = idx === 0 || fullTextChars[idx - 1] === ' ';
                         const isCursor = idx === cursorPos && isFocused && !completed;
 
                         if (char === ' ') {
@@ -155,7 +186,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                         if (state === "correct") {
                             return (
                                 <span key={idx} className="relative">
-                                    <span className="text-stone-900">{char}</span>
+                                    <span className={cn("text-stone-900 transition-colors", char === ' ' && "opacity-0")}>{char === ' ' ? '_' : char}</span>
                                     {isCursor && (
                                         <span className="absolute -right-0.5 top-0 h-full w-0.5 bg-amber-500 animate-pulse" />
                                     )}
@@ -164,10 +195,12 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                         }
 
                         if (state === "wrong") {
+                            // If the expected char is a space but they typed something else, show what they typed in red
+                            const displayChar = typedCharsState[idx] === ' ' ? '_' : (typedCharsState[idx] ?? char);
                             return (
                                 <span key={idx} className="relative">
                                     <span className="text-rose-500 font-bold underline decoration-wavy decoration-rose-400">
-                                        {typed[idx] ?? char}
+                                        {displayChar}
                                     </span>
                                     {isCursor && (
                                         <span className="absolute -right-0.5 top-0 h-full w-0.5 bg-rose-500 animate-pulse" />
@@ -199,7 +232,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                     })}
 
                     {/* Cursor at end (after all chars) */}
-                    {cursorPos === fullText.length && isFocused && !completed && (
+                    {cursorPos === fullTextChars.length && isFocused && !completed && (
                         <span className="inline-block w-0.5 h-6 bg-amber-500 animate-pulse ml-0.5 align-middle" />
                     )}
                 </div>
@@ -229,7 +262,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                 ) : (
                     <>
                         <span className="text-stone-400">
-                            {typed.length} / {totalTypeable} {tl(t.charCount)}
+                            {typedCharsState.length} / {totalTypeable} {tl(t.charCount)}
                         </span>
                         <button
                             className="text-stone-300 transition-colors cursor-not-allowed"
@@ -242,14 +275,15 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
             </div>
 
             {/* Progress bar */}
-            {!completed && (
-                <div className="mt-1 h-1 rounded-full bg-stone-100 overflow-hidden">
-                    <div
-                        className="h-full bg-rose-400 rounded-full transition-all duration-100"
-                        style={{ width: `${(typed.length / totalTypeable) * 100}%` }}
-                    />
-                </div>
-            )}
+            <div className="mt-1 h-1 rounded-full bg-stone-100 overflow-hidden">
+                <div
+                    className={cn(
+                        "h-full rounded-full transition-all duration-100",
+                        completed ? "bg-emerald-400" : "bg-rose-400"
+                    )}
+                    style={{ width: `${(typedCharsState.length / totalTypeable) * 100}%` }}
+                />
+            </div>
         </div>
     );
 }
