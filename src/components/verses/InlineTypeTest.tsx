@@ -24,6 +24,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const [completed, setCompleted] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const completedFired = useRef(false);
+    const isComposingRef = useRef(false);
 
     const fullText = text.normalize('NFC');
 
@@ -48,45 +49,56 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         fire(0.1, { spread: 120, startVelocity: 45 });
     }, []);
 
-    // Characters that should be auto-filled/ignored when typing
-    // Expanded to include common punctuation in English, Korean, Chinese, Spanish, French, German
+    // Characters that should be auto-filled (spaces and punctuation)
     const isAutoFillChar = (char: string) => /[\s,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝－｀：；"＇＜＞，．？/]/.test(char) || char === ' ';
 
     // Use Intl.Segmenter to correctly split multi-byte characters like Korean
-    const stringToChars = (str: string) => {
+    const stringToChars = useCallback((str: string) => {
         if (!str) return [];
         const segmenter = new Intl.Segmenter(language === 'en' ? 'en' : 'ko', { granularity: 'grapheme' });
         return Array.from(segmenter.segment(str)).map(seg => seg.segment);
-    };
+    }, [language]);
 
     const fullTextChars = stringToChars(fullText);
     const totalTypeable = fullTextChars.length;
+
+
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (completed) return;
         const val = e.target.value;
 
-        // Fast path for native typing (especially IME on mobile/Korean)
-        // We let the input value update and treat its length as the cursor position
-        const typedChars = stringToChars(typed);
+        // During IME composition, just store the raw value. Don't auto-fill.
+        if (isComposingRef.current) {
+            setTyped(val);
+            return;
+        }
 
+        processInput(val);
+    };
+
+    const processInput = (val: string) => {
+        const prevChars = stringToChars(typed);
         let newTyped = val;
         let newTypedChars = stringToChars(newTyped);
 
-        // Auto-fill logic
-        if (newTypedChars.length > typedChars.length) { // user added chars
-            // ONLY auto-fill if the last typed character exactly matches the target character.
-            // This prevents auto-filling spaces while the user is still composing a Korean character (IME).
-            const lastTypedIdx = newTypedChars.length - 1;
-            if (newTypedChars[lastTypedIdx].normalize('NFC') === fullTextChars[lastTypedIdx]) {
-                while (newTypedChars.length < fullTextChars.length && isAutoFillChar(fullTextChars[newTypedChars.length])) {
+        const isDeleting = newTypedChars.length < prevChars.length;
+
+        if (!isDeleting && newTypedChars.length > 0) {
+            // Check if the last typed character matches the target at its position
+            const lastIdx = newTypedChars.length - 1;
+            if (lastIdx < fullTextChars.length &&
+                newTypedChars[lastIdx].normalize('NFC') === fullTextChars[lastIdx]) {
+                // Auto-fill following spaces/punctuation
+                while (newTypedChars.length < fullTextChars.length &&
+                    isAutoFillChar(fullTextChars[newTypedChars.length])) {
                     newTyped += fullTextChars[newTypedChars.length];
                     newTypedChars = stringToChars(newTyped);
                 }
             }
-        } else {
-            // If user is deleting (backspace), and they delete into an auto-fill char, 
-            // delete the auto-fill chars as well so they don't get stuck.
+        } else if (isDeleting) {
+            // Backspace: strip trailing auto-fill chars so user doesn't get stuck
             while (newTypedChars.length > 0 && isAutoFillChar(newTypedChars[newTypedChars.length - 1])) {
                 newTyped = newTyped.slice(0, -newTypedChars[newTypedChars.length - 1].length);
                 newTypedChars = stringToChars(newTyped);
@@ -100,8 +112,10 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         }
 
         setTyped(newTyped);
+        checkCompletion(newTyped, newTypedChars);
+    };
 
-        // Check completion right away using characters
+    const checkCompletion = (newTyped: string, newTypedChars: string[]) => {
         const cleanTyped = newTypedChars.map(c => c.normalize('NFC')).filter(c => !isAutoFillChar(c)).join('');
         const cleanFull = fullTextChars.filter(c => !isAutoFillChar(c)).join('');
         const isFullyTyped = newTypedChars.length === fullTextChars.length;
@@ -116,6 +130,16 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         }
     };
 
+    const handleCompositionStart = () => {
+        isComposingRef.current = true;
+    };
+
+    const handleCompositionEnd = (e: React.CompositionEvent<HTMLInputElement>) => {
+        isComposingRef.current = false;
+        // After composition ends, process the final value with auto-fill
+        processInput(e.currentTarget.value);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Escape") {
             e.preventDefault();
@@ -127,9 +151,6 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
     const getCharState = (idx: number): CharState => {
         if (idx >= typedCharsState.length) return "hidden";
-        // Convert input Korean characters to initial consonants for comparison if needed, 
-        // but for now strict comparison is safer for completion. However, Korean IME builds characters
-        // incrementally. If the full character is matched, it's correct.
         return typedCharsState[idx].normalize('NFC') === fullTextChars[idx] ? "correct" : "wrong";
     };
 
@@ -162,6 +183,8 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                     onKeyDown={handleKeyDown}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
+                    onCompositionStart={handleCompositionStart}
+                    onCompositionEnd={handleCompositionEnd}
                     className="absolute inset-0 opacity-0 w-full h-full cursor-text z-10"
                     aria-label="Type the verse here"
                     autoComplete="off"
@@ -176,8 +199,6 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                 <div className="text-xl md:text-2xl font-reading font-bold leading-relaxed flex flex-wrap justify-center items-center min-h-[4rem]">
                     {fullTextChars.map((char, idx) => {
                         const state = getCharState(idx);
-                        // For first letter hinting, we treat space-separated items as words.
-                        // Wait, to calculate if a character is first of word, we look at the raw string
                         const isFirstOfWord = idx === 0 || fullTextChars[idx - 1] === ' ';
                         const isCursor = idx === cursorPos && isFocused && !completed;
 
@@ -204,7 +225,6 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                         }
 
                         if (state === "wrong") {
-                            // If the expected char is a space but they typed something else, show what they typed in red
                             const displayChar = typedCharsState[idx] === ' ' ? '_' : (typedCharsState[idx] ?? char);
                             return (
                                 <span key={idx} className="relative">
