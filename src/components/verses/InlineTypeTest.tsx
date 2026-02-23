@@ -25,7 +25,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const [isFocused, setIsFocused] = useState(false);
     const completedFired = useRef(false);
 
-    const fullText = text;
+    const fullText = text.normalize('NFC');
 
     // Focus on mount
     useEffect(() => {
@@ -78,7 +78,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
             // ONLY auto-fill if the last typed character exactly matches the target character.
             // This prevents auto-filling spaces while the user is still composing a Korean character (IME).
             const lastTypedIdx = newTypedChars.length - 1;
-            if (newTypedChars[lastTypedIdx] === fullTextChars[lastTypedIdx]) {
+            if (newTypedChars[lastTypedIdx].normalize('NFC') === fullTextChars[lastTypedIdx]) {
                 while (newTypedChars.length < fullTextChars.length && isAutoFillChar(fullTextChars[newTypedChars.length])) {
                     newTyped += fullTextChars[newTypedChars.length];
                     newTypedChars = stringToChars(newTyped);
@@ -102,7 +102,12 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         setTyped(newTyped);
 
         // Check completion right away using characters
-        if (newTyped === fullText && !completedFired.current) {
+        const cleanTyped = newTypedChars.map(c => c.normalize('NFC')).filter(c => !isAutoFillChar(c)).join('');
+        const cleanFull = fullTextChars.filter(c => !isAutoFillChar(c)).join('');
+        const isFullyTyped = newTypedChars.length === fullTextChars.length;
+        const isMatch = newTyped.normalize('NFC') === fullText || (isFullyTyped && cleanTyped === cleanFull);
+
+        if (isMatch && !completedFired.current) {
             completedFired.current = true;
             setCompleted(true);
             fireConfetti();
@@ -125,7 +130,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         // Convert input Korean characters to initial consonants for comparison if needed, 
         // but for now strict comparison is safer for completion. However, Korean IME builds characters
         // incrementally. If the full character is matched, it's correct.
-        return typedCharsState[idx] === fullTextChars[idx] ? "correct" : "wrong";
+        return typedCharsState[idx].normalize('NFC') === fullTextChars[idx] ? "correct" : "wrong";
     };
 
     // Current cursor position = typedCharsState.length (next char to type)
