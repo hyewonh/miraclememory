@@ -56,7 +56,7 @@ function StepIndicator({
                                     done
                                         ? "bg-amber-500 border-amber-500 text-white"
                                         : active
-                                            ? "bg-white border-amber-500 text-amber-600 ring-4 ring-amber-100"
+                                            ? "bg-white border-amber-500 text-amber-600 ring-4 ring-amber-100 animate-pulse"
                                             : "bg-white border-stone-300 text-stone-400"
                                 )}
                             >

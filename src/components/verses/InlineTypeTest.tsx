@@ -75,10 +75,14 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
         // Auto-fill logic
         if (newTypedChars.length > typedChars.length) { // user added chars
-            // Check if next char in target is auto-fill
-            while (newTypedChars.length < fullTextChars.length && isAutoFillChar(fullTextChars[newTypedChars.length])) {
-                newTyped += fullTextChars[newTypedChars.length];
-                newTypedChars = stringToChars(newTyped);
+            // ONLY auto-fill if the last typed character exactly matches the target character.
+            // This prevents auto-filling spaces while the user is still composing a Korean character (IME).
+            const lastTypedIdx = newTypedChars.length - 1;
+            if (newTypedChars[lastTypedIdx] === fullTextChars[lastTypedIdx]) {
+                while (newTypedChars.length < fullTextChars.length && isAutoFillChar(fullTextChars[newTypedChars.length])) {
+                    newTyped += fullTextChars[newTypedChars.length];
+                    newTypedChars = stringToChars(newTyped);
+                }
             }
         } else {
             // If user is deleting (backspace), and they delete into an auto-fill char, 
