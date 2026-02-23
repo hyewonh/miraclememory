@@ -25,6 +25,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const [isFocused, setIsFocused] = useState(false);
     const completedFired = useRef(false);
     const isComposingRef = useRef(false);
+    const lastValueRef = useRef("");  // track last value via ref (not state)
 
     const fullText = text.normalize('NFC');
 
@@ -50,7 +51,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     }, []);
 
     // Characters that should be auto-filled (spaces and punctuation)
-    const isAutoFillChar = (char: string) => /[\s,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝－｀：；"＇＜＞，．？/]/.test(char) || char === ' ';
+    const isAutoFillChar = (char: string) => /[\s,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝\-｀：；"＇＜＞，．？/]/.test(char) || char === ' ';
 
     // Use Intl.Segmenter to correctly split multi-byte characters like Korean
     const stringToChars = useCallback((str: string) => {
@@ -62,15 +63,81 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const fullTextChars = stringToChars(fullText);
     const totalTypeable = fullTextChars.length;
 
+    const checkCompletion = useCallback((newTyped: string, newTypedChars: string[]) => {
+        if (completedFired.current) return;
 
+        const isFullyTyped = newTypedChars.length === fullTextChars.length;
+        if (!isFullyTyped) return;
 
+        // Check 1: exact match
+        const exactMatch = newTyped.normalize('NFC') === fullText;
+
+        // Check 2: per-character match (ignoring tiny normalization diffs)
+        let charMatch = true;
+        for (let i = 0; i < fullTextChars.length; i++) {
+            if (newTypedChars[i]?.normalize('NFC') !== fullTextChars[i]) {
+                charMatch = false;
+                break;
+            }
+        }
+
+        // Check 3: relaxed — just compare non-autofill chars
+        const cleanTyped = newTypedChars.map(c => c.normalize('NFC')).filter(c => !isAutoFillChar(c)).join('');
+        const cleanFull = fullTextChars.filter(c => !isAutoFillChar(c)).join('');
+        const relaxedMatch = cleanTyped === cleanFull;
+
+        if (exactMatch || charMatch || relaxedMatch) {
+            completedFired.current = true;
+            setCompleted(true);
+            fireConfetti();
+            setTimeout(() => { fireConfetti(); }, 700);
+            onComplete?.();
+        }
+    }, [fullText, fullTextChars, fireConfetti, onComplete, isAutoFillChar]);
+
+    const applyAutoFill = useCallback((val: string): string => {
+        let newTyped = val;
+        let newTypedChars = stringToChars(newTyped);
+
+        if (newTypedChars.length === 0) return newTyped;
+
+        const prevLen = stringToChars(lastValueRef.current).length;
+        const isDeleting = newTypedChars.length < prevLen;
+
+        if (!isDeleting) {
+            // Auto-fill following spaces/punctuation if last char matches
+            const lastIdx = newTypedChars.length - 1;
+            if (lastIdx < fullTextChars.length &&
+                newTypedChars[lastIdx].normalize('NFC') === fullTextChars[lastIdx]) {
+                while (newTypedChars.length < fullTextChars.length &&
+                    isAutoFillChar(fullTextChars[newTypedChars.length])) {
+                    newTyped += fullTextChars[newTypedChars.length];
+                    newTypedChars = stringToChars(newTyped);
+                }
+            }
+        } else {
+            // Backspace: strip trailing auto-fill chars
+            while (newTypedChars.length > 0 && isAutoFillChar(newTypedChars[newTypedChars.length - 1])) {
+                newTyped = newTyped.slice(0, -newTypedChars[newTypedChars.length - 1].length);
+                newTypedChars = stringToChars(newTyped);
+            }
+        }
+
+        // Clamp to max length
+        if (newTypedChars.length > fullTextChars.length) {
+            newTyped = newTypedChars.slice(0, fullTextChars.length).join('');
+        }
+
+        return newTyped;
+    }, [fullTextChars, stringToChars, isAutoFillChar]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (completed) return;
         const val = e.target.value;
 
         if (isComposingRef.current) {
-            // During IME composition: store value, skip auto-fill, but ALWAYS check completion
+            // During IME composition: just store the raw value, no auto-fill
+            // But clamp to max length and check completion
             let newTyped = val;
             let newTypedChars = stringToChars(newTyped);
             if (newTypedChars.length > fullTextChars.length) {
@@ -78,63 +145,18 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                 newTypedChars = stringToChars(newTyped);
             }
             setTyped(newTyped);
+            lastValueRef.current = newTyped;
             checkCompletion(newTyped, newTypedChars);
             return;
         }
 
-        processInput(val);
-    };
+        // Not composing: apply auto-fill logic
+        const processed = applyAutoFill(val);
+        const processedChars = stringToChars(processed);
 
-    const processInput = (val: string) => {
-        const prevChars = stringToChars(typed);
-        let newTyped = val;
-        let newTypedChars = stringToChars(newTyped);
-
-        const isDeleting = newTypedChars.length < prevChars.length;
-
-        if (!isDeleting && newTypedChars.length > 0) {
-            // Check if the last typed character matches the target at its position
-            const lastIdx = newTypedChars.length - 1;
-            if (lastIdx < fullTextChars.length &&
-                newTypedChars[lastIdx].normalize('NFC') === fullTextChars[lastIdx]) {
-                // Auto-fill following spaces/punctuation
-                while (newTypedChars.length < fullTextChars.length &&
-                    isAutoFillChar(fullTextChars[newTypedChars.length])) {
-                    newTyped += fullTextChars[newTypedChars.length];
-                    newTypedChars = stringToChars(newTyped);
-                }
-            }
-        } else if (isDeleting) {
-            // Backspace: strip trailing auto-fill chars so user doesn't get stuck
-            while (newTypedChars.length > 0 && isAutoFillChar(newTypedChars[newTypedChars.length - 1])) {
-                newTyped = newTyped.slice(0, -newTypedChars[newTypedChars.length - 1].length);
-                newTypedChars = stringToChars(newTyped);
-            }
-        }
-
-        // Prevent typing beyond the length
-        if (newTypedChars.length > fullTextChars.length) {
-            newTyped = newTypedChars.slice(0, fullTextChars.length).join('');
-            newTypedChars = stringToChars(newTyped);
-        }
-
-        setTyped(newTyped);
-        checkCompletion(newTyped, newTypedChars);
-    };
-
-    const checkCompletion = (newTyped: string, newTypedChars: string[]) => {
-        const cleanTyped = newTypedChars.map(c => c.normalize('NFC')).filter(c => !isAutoFillChar(c)).join('');
-        const cleanFull = fullTextChars.filter(c => !isAutoFillChar(c)).join('');
-        const isFullyTyped = newTypedChars.length === fullTextChars.length;
-        const isMatch = newTyped.normalize('NFC') === fullText || (isFullyTyped && cleanTyped === cleanFull);
-
-        if (isMatch && !completedFired.current) {
-            completedFired.current = true;
-            setCompleted(true);
-            fireConfetti();
-            setTimeout(() => { fireConfetti(); }, 700);
-            onComplete?.();
-        }
+        setTyped(processed);
+        lastValueRef.current = processed;
+        checkCompletion(processed, processedChars);
     };
 
     const handleCompositionStart = () => {
@@ -143,8 +165,15 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
     const handleCompositionEnd = (e: React.CompositionEvent<HTMLInputElement>) => {
         isComposingRef.current = false;
-        // After composition ends, process the final value with auto-fill
-        processInput(e.currentTarget.value);
+        const val = e.currentTarget.value;
+
+        // Apply auto-fill now that composition is done
+        const processed = applyAutoFill(val);
+        const processedChars = stringToChars(processed);
+
+        setTyped(processed);
+        lastValueRef.current = processed;
+        checkCompletion(processed, processedChars);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -182,7 +211,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                 tabIndex={-1}
                 aria-label="Type the verse"
             >
-                {/* Real hidden input */}
+                {/* Real hidden input — position offscreen to prevent IME overlay */}
                 <input
                     ref={inputRef}
                     value={typed}
@@ -192,7 +221,16 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                     onBlur={() => setIsFocused(false)}
                     onCompositionStart={handleCompositionStart}
                     onCompositionEnd={handleCompositionEnd}
-                    className="absolute inset-0 opacity-0 w-full h-full cursor-text z-10"
+                    className="sr-only"
+                    style={{
+                        position: 'absolute',
+                        left: '-9999px',
+                        top: '0',
+                        width: '1px',
+                        height: '1px',
+                        opacity: 0,
+                        pointerEvents: 'none',
+                    }}
                     aria-label="Type the verse here"
                     autoComplete="off"
                     autoCorrect="off"
@@ -223,7 +261,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                         if (state === "correct") {
                             return (
                                 <span key={idx} className="relative">
-                                    <span className={cn("text-stone-900 transition-colors", char === ' ' && "opacity-0")}>{char === ' ' ? '_' : char}</span>
+                                    <span className="text-stone-900 transition-colors">{char}</span>
                                     {isCursor && (
                                         <span className="absolute -right-0.5 top-0 h-full w-0.5 bg-amber-500 animate-pulse" />
                                     )}
