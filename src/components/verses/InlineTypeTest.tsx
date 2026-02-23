@@ -66,34 +66,27 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const checkCompletion = useCallback((newTyped: string, newTypedChars: string[]) => {
         if (completedFired.current) return;
 
-        const isFullyTyped = newTypedChars.length === fullTextChars.length;
+        // Simple: all chars filled + none are wrong = complete
+        const isFullyTyped = newTypedChars.length >= fullTextChars.length;
         if (!isFullyTyped) return;
 
-        // Check 1: exact match
-        const exactMatch = newTyped.normalize('NFC') === fullText;
-
-        // Check 2: per-character match (ignoring tiny normalization diffs)
-        let charMatch = true;
+        // Check every char matches (same logic as getCharState)
+        let allCorrect = true;
         for (let i = 0; i < fullTextChars.length; i++) {
             if (newTypedChars[i]?.normalize('NFC') !== fullTextChars[i]) {
-                charMatch = false;
+                allCorrect = false;
                 break;
             }
         }
 
-        // Check 3: relaxed — just compare non-autofill chars
-        const cleanTyped = newTypedChars.map(c => c.normalize('NFC')).filter(c => !isAutoFillChar(c)).join('');
-        const cleanFull = fullTextChars.filter(c => !isAutoFillChar(c)).join('');
-        const relaxedMatch = cleanTyped === cleanFull;
-
-        if (exactMatch || charMatch || relaxedMatch) {
+        if (allCorrect) {
             completedFired.current = true;
             setCompleted(true);
             fireConfetti();
             setTimeout(() => { fireConfetti(); }, 700);
             onComplete?.();
         }
-    }, [fullText, fullTextChars, fireConfetti, onComplete, isAutoFillChar]);
+    }, [fullTextChars, fireConfetti, onComplete]);
 
     const applyAutoFill = useCallback((val: string): string => {
         let newTyped = val;
