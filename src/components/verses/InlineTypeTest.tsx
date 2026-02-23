@@ -69,9 +69,16 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         if (completed) return;
         const val = e.target.value;
 
-        // During IME composition, just store the raw value. Don't auto-fill.
         if (isComposingRef.current) {
-            setTyped(val);
+            // During IME composition: store value, skip auto-fill, but ALWAYS check completion
+            let newTyped = val;
+            let newTypedChars = stringToChars(newTyped);
+            if (newTypedChars.length > fullTextChars.length) {
+                newTyped = newTypedChars.slice(0, fullTextChars.length).join('');
+                newTypedChars = stringToChars(newTyped);
+            }
+            setTyped(newTyped);
+            checkCompletion(newTyped, newTypedChars);
             return;
         }
 
