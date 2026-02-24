@@ -60,7 +60,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     }, []);
 
     // Characters that should be auto-filled (spaces and punctuation)
-    const isAutoFillChar = (char: string) => /[,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝\-｀：；"＇＜＞，．？/]/.test(char);
+    const isAutoFillChar = (char: string) => /[,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝\-｀：；"＇＜＞，．？/‘’“”–—]/.test(char);
 
     // Use Intl.Segmenter to correctly split multi-byte characters like Korean
     const stringToChars = useCallback((str: string) => {
@@ -78,6 +78,11 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         const nfc = ch.normalize('NFC');
         // Treat all whitespace variants as regular space
         if (/^\s$/.test(nfc) || nfc === '\u00A0' || nfc === '\u3000') return ' ';
+        // Unify curly/smart quotes and apostrophes to ASCII equivalents
+        if (nfc === '\u2018' || nfc === '\u2019' || nfc === '\u02BC') return "'";
+        if (nfc === '\u201C' || nfc === '\u201D') return '"';
+        // Unify em-dash and en-dash to hyphen
+        if (nfc === '\u2013' || nfc === '\u2014') return '-';
         return nfc;
     }, []);
 
