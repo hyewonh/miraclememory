@@ -3,15 +3,67 @@
 import { useAllProgress } from "@/hooks/useAllProgress";
 import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/context/LanguageContext";
+import { useReviewReminder } from "@/hooks/useReviewReminder";
 import { INITIAL_SERIES, VERSES } from "@/data/seedData";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { ReviewReminderModal } from "@/components/verses/ReviewReminderModal";
+
+const DAY_OF_WEEK: Record<number, { en: string; ko: string }> = {
+    0: { en: "Sunday", ko: "주일" },
+    1: { en: "Monday", ko: "월요일" },
+    2: { en: "Tuesday", ko: "화요일" },
+    3: { en: "Wednesday", ko: "수요일" },
+    4: { en: "Thursday", ko: "목요일" },
+    5: { en: "Friday", ko: "금요일" },
+    6: { en: "Saturday", ko: "토요일" },
+};
+
+const TEXTS = {
+    continueWhere: { en: "Continue where you left off", ko: "이어서 외우기" },
+    resumeLearning: { en: "▶  Resume Learning", ko: "▶  이어서 학습하기" },
+    browseSeries: { en: "Browse Series", ko: "시리즈 보기" },
+    startPrompt: {
+        en: "Start memorizing scripture — one verse at a time.",
+        ko: "오늘부터 한 구절씩 말씀을 외워보세요.",
+    },
+    todayVerse: { en: "Today's Verse", ko: "오늘의 말씀" },
+    streak: { en: "Day Streak", ko: "연속 학습" },
+    verses: { en: "Verses", ko: "구절" },
+    reviewDue: { en: "Review Due", ko: "복습 대기" },
+    reviewBtn: { en: "Review", ko: "복습하기" },
+    greeting: { en: "Good", ko: "안녕하세요," },
+    morning: { en: "morning", ko: "아침이에요" },
+    afternoon: { en: "afternoon", ko: "오후예요" },
+    evening: { en: "evening", ko: "저녁이에요" },
+};
+
+function getGreetingTime(lang: "en" | "ko") {
+    const h = new Date().getHours();
+    if (h < 12) return TEXTS.morning[lang];
+    if (h < 18) return TEXTS.afternoon[lang];
+    return TEXTS.evening[lang];
+}
+
+/** Pick a "daily" verse from VERSES using the day-of-year as seed */
+function getDailyVerse() {
+    if (!VERSES.length) return null;
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - start.getTime();
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
+    return VERSES[dayOfYear % VERSES.length];
+}
 
 export function UserDashboard() {
     const { allProgress, loading } = useAllProgress();
     const { profile } = useProfile();
     const { language } = useLanguage();
     const router = useRouter();
+    const { reviewItems, dismiss, dismissAll } = useReviewReminder();
+    const [showReviewModal, setShowReviewModal] = useState(false);
+
+    const lang = language === "ko" ? "ko" : "en";
 
     const stats = useMemo(() => {
         let totalVerses = 0;
@@ -21,101 +73,168 @@ export function UserDashboard() {
         Object.entries(allProgress).forEach(([seriesId, prog]) => {
             const count = prog.completedVerses[language]?.length || 0;
             totalVerses += count;
-
             if (prog.lastUpdated > lastUpdated) {
                 lastUpdated = prog.lastUpdated;
                 lastSeriesId = seriesId;
             }
         });
 
-        const lastSeries = lastSeriesId
-            ? INITIAL_SERIES.find(s => s.id === lastSeriesId)
-            : null;
+        const lastSeries = lastSeriesId ? INITIAL_SERIES.find((s) => s.id === lastSeriesId) : null;
 
         let resumeVerseIndex = 0;
         if (lastSeries && allProgress[lastSeriesId]) {
-            const verses = VERSES.filter(v => v.seriesId === lastSeriesId);
+            const verses = VERSES.filter((v) => v.seriesId === lastSeriesId);
             const completedIds = allProgress[lastSeriesId].completedVerses[language] || [];
-            const firstUnmemorized = verses.findIndex(v => !completedIds.includes(v.id));
+            const firstUnmemorized = verses.findIndex((v) => !completedIds.includes(v.id));
             resumeVerseIndex = firstUnmemorized >= 0 ? firstUnmemorized : verses.length - 1;
         }
 
-        return {
-            totalVerses,
-            streak: profile?.streak || 0,
-            lastSeries,
-            lastSeriesId,
-            resumeVerseIndex,
-        };
+        return { totalVerses, streak: profile?.streak || 0, lastSeries, lastSeriesId, resumeVerseIndex };
     }, [allProgress, language, profile]);
+
+    const dailyVerse = useMemo(() => getDailyVerse(), []);
+    const today = new Date();
+    const dayName = DAY_OF_WEEK[today.getDay()][lang];
+    const displayName = profile?.displayName?.split(" ")[0] || "";
 
     if (loading) return null;
 
     return (
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-10">
-            <div className="bg-stone-100 border border-stone-200 rounded-3xl p-5 md:p-7">
+        <>
+            {/* Review Modal (portal-like overlay) */}
+            {showReviewModal && reviewItems.length > 0 && (
+                <ReviewReminderModal
+                    items={reviewItems}
+                    onDismiss={(id) => dismiss(id)}
+                    onDismissAll={() => { dismissAll(); setShowReviewModal(false); }}
+                />
+            )}
 
-                {/* ── Mobile: centered column / Desktop: row ── */}
-                <div className="flex flex-col items-center text-center md:flex-row md:items-center md:text-left gap-5">
+            <div className="w-full max-w-7xl mx-auto px-4 md:px-10">
+                <div className="bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-3xl p-5 md:p-7 shadow-sm">
 
-                    {/* Stats — centered on mobile, left on desktop */}
-                    <div className="flex items-center justify-center gap-3 md:gap-4">
-                        {/* Streak */}
-                        <div className="flex flex-col items-center bg-white border border-stone-200 rounded-2xl px-5 py-3 min-w-[86px] shadow-sm">
-                            <div className="text-2xl font-bold text-amber-500">🔥 {stats.streak}</div>
-                            <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold mt-1">Day Streak</div>
-                        </div>
-                        {/* Verses */}
-                        <div className="flex flex-col items-center bg-white border border-stone-200 rounded-2xl px-5 py-3 min-w-[86px] shadow-sm">
-                            <div className="text-2xl font-bold text-emerald-500">{stats.totalVerses}</div>
-                            <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold mt-1">Verses</div>
-                        </div>
-                    </div>
+                    {/* ══════════════════════════════════════════════
+                        GRID: Left (main CTA) | Right (extras)
+                    ══════════════════════════════════════════════ */}
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
 
-                    {/* Divider on mobile */}
-                    <div className="w-full h-px bg-stone-200 md:hidden" />
+                        {/* ── LEFT: greeting + stats + CTA ── */}
+                        <div className="flex flex-col gap-5">
 
-                    {/* Resume CTA — centered on mobile */}
-                    <div className="flex-1 min-w-0 flex flex-col items-center md:items-start">
-                        {stats.lastSeries ? (
-                            <>
-                                <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
-                                    Continue where you left off
+                            {/* Greeting row */}
+                            <div>
+                                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                                    {dayName}
                                 </p>
-                                <h3 className="text-base md:text-lg font-bold text-stone-800 mb-3 truncate max-w-full">
-                                    {stats.lastSeries.title[language]}
-                                </h3>
-                                <button
-                                    onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
-                                    className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
-                                >
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M8 5v14l11-7z" />
-                                    </svg>
-                                    Resume Learning
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <p className="text-stone-500 text-sm mb-3">
-                                    Start memorizing scripture — one verse at a time.
+                                <h2 className="text-xl md:text-2xl font-bold text-stone-800 mt-0.5">
+                                    {lang === "ko"
+                                        ? `${displayName}님, ${getGreetingTime(lang)} 👋`
+                                        : `Good ${getGreetingTime(lang)}, ${displayName}! 👋`}
+                                </h2>
+                            </div>
+
+                            {/* Stat pills */}
+                            <div className="flex items-center gap-3 flex-wrap">
+                                {/* Streak */}
+                                <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                                    <span className="text-2xl">🔥</span>
+                                    <div>
+                                        <div className="text-xl font-black text-amber-500 leading-none">{stats.streak}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.streak[lang]}</div>
+                                    </div>
+                                </div>
+
+                                {/* Verses memorized */}
+                                <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                                    <span className="text-2xl">📖</span>
+                                    <div>
+                                        <div className="text-xl font-black text-emerald-500 leading-none">{stats.totalVerses}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.verses[lang]}</div>
+                                    </div>
+                                </div>
+
+                                {/* Review badge — only if there are items */}
+                                {reviewItems.length > 0 && (
+                                    <button
+                                        onClick={() => setShowReviewModal(true)}
+                                        className="flex items-center gap-2 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 shadow-sm hover:bg-amber-100 transition-all group"
+                                    >
+                                        <span className="text-2xl">⏰</span>
+                                        <div>
+                                            <div className="text-xl font-black text-amber-600 leading-none">{reviewItems.length}</div>
+                                            <div className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">{TEXTS.reviewDue[lang]}</div>
+                                        </div>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Resume / Start CTA */}
+                            <div>
+                                {stats.lastSeries ? (
+                                    <>
+                                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
+                                            {TEXTS.continueWhere[lang]}
+                                        </p>
+                                        <h3 className="text-base md:text-lg font-bold text-stone-800 mb-3 truncate max-w-full">
+                                            {stats.lastSeries.title[language]}
+                                        </h3>
+                                        <button
+                                            onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
+                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
+                                        >
+                                            {TEXTS.resumeLearning[lang]}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-stone-500 text-sm mb-3">{TEXTS.startPrompt[lang]}</p>
+                                        <button
+                                            onClick={() => document.getElementById("series")?.scrollIntoView({ behavior: "smooth" })}
+                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
+                                        >
+                                            {TEXTS.browseSeries[lang]}
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* ── RIGHT: Today's Verse card ── */}
+                        {dailyVerse && (
+                            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow">
+                                {/* Label */}
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                    <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                                        {TEXTS.todayVerse[lang]}
+                                    </span>
+                                </div>
+
+                                {/* Reference */}
+                                <p className="text-sm font-bold text-rose-600 font-serif italic">
+                                    — {dailyVerse.reference[language]}
                                 </p>
+
+                                {/* Text */}
+                                <p className="text-stone-700 text-sm leading-relaxed line-clamp-5 font-reading">
+                                    {dailyVerse.text[language]}
+                                </p>
+
+                                {/* CTA */}
                                 <button
-                                    onClick={() => {
-                                        document.getElementById("series")?.scrollIntoView({ behavior: "smooth" });
-                                    }}
-                                    className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
+                                    onClick={() => router.push(`/series/${dailyVerse.seriesId}`)}
+                                    className="mt-auto w-full text-center text-xs font-bold text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-400 rounded-xl py-2.5 transition-all"
                                 >
-                                    Browse Series
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                    {lang === "ko" ? "이 구절 외우기 →" : "Memorize this verse →"}
                                 </button>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
