@@ -718,9 +718,8 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                         <button
                                             key={i}
                                             onClick={() => {
-                                                if (checked) return;
                                                 const updated = [...shadowReps];
-                                                updated[i] = true;
+                                                updated[i] = !checked;
                                                 setShadowReps(updated);
                                             }}
                                             className={cn(
