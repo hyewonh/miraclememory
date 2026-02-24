@@ -87,30 +87,23 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         return nfc;
     }, []);
 
-    const checkCompletion = useCallback((newTypedChars: string[]) => {
-        if (completedFired.current) return;
-        if (newTypedChars.length < fullTextChars.length) return;
-
-        // Normalize both sides to plain strings for comparison
-        // This avoids char-by-char index issues with smart quotes, em-dashes, etc.
-        const typedStr = newTypedChars.slice(0, fullTextChars.length).map(c => normalizeChar(c)).join('');
-        const expectedStr = fullTextChars.map(c => normalizeChar(c)).join('');
-
-        if (typedStr === expectedStr) {
+    // Fire confetti when: char count matches AND no wrong chars visible
+    useEffect(() => {
+        if (completed || completedFired.current) return;
+        const chars = stringToChars(typed);
+        if (chars.length < fullTextChars.length) return;
+        // No wrong chars = every typed char matches (after normalization)
+        const hasWrong = chars.slice(0, fullTextChars.length).some(
+            (c, i) => normalizeChar(c) !== normalizeChar(fullTextChars[i])
+        );
+        if (!hasWrong) {
             completedFired.current = true;
             setCompleted(true);
             fireConfetti();
             setTimeout(() => { fireConfetti(); }, 700);
             onComplete?.();
         }
-    }, [fullTextChars, normalizeChar, fireConfetti, onComplete]);
-
-    // Belt-and-suspenders: check completion whenever typed state changes
-    useEffect(() => {
-        if (completed || completedFired.current) return;
-        const chars = stringToChars(typed);
-        checkCompletion(chars);
-    }, [typed, completed, stringToChars, checkCompletion]);
+    }, [typed, completed, fullTextChars, normalizeChar, stringToChars, fireConfetti, onComplete]);
 
     const applyAutoFill = useCallback((val: string): string => {
         let newTyped = val;
@@ -163,7 +156,6 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
             }
             setTyped(newTyped);
             lastValueRef.current = newTyped;
-            checkCompletion(newTypedChars);
             return;
         }
 
@@ -173,7 +165,6 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
         setTyped(processed);
         lastValueRef.current = processed;
-        checkCompletion(processedChars);
     };
 
     const handleCompositionStart = () => {
@@ -190,7 +181,6 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
         setTyped(processed);
         lastValueRef.current = processed;
-        checkCompletion(processedChars);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
