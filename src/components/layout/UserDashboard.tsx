@@ -9,16 +9,6 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ReviewReminderModal } from "@/components/verses/ReviewReminderModal";
 
-const DAY_OF_WEEK: Record<number, { en: string; ko: string }> = {
-    0: { en: "Sunday", ko: "주일" },
-    1: { en: "Monday", ko: "월요일" },
-    2: { en: "Tuesday", ko: "화요일" },
-    3: { en: "Wednesday", ko: "수요일" },
-    4: { en: "Thursday", ko: "목요일" },
-    5: { en: "Friday", ko: "금요일" },
-    6: { en: "Saturday", ko: "토요일" },
-};
-
 const TEXTS = {
     continueWhere: { en: "Continue where you left off", ko: "이어서 외우기" },
     resumeLearning: { en: "▶  Resume Learning", ko: "▶  이어서 학습하기" },
@@ -31,19 +21,8 @@ const TEXTS = {
     streak: { en: "Day Streak", ko: "연속 학습" },
     verses: { en: "Verses", ko: "구절" },
     reviewDue: { en: "Review Due", ko: "복습 대기" },
-    reviewBtn: { en: "Review", ko: "복습하기" },
-    greeting: { en: "Good", ko: "안녕하세요," },
-    morning: { en: "morning", ko: "아침이에요" },
-    afternoon: { en: "afternoon", ko: "오후예요" },
-    evening: { en: "evening", ko: "저녁이에요" },
 };
 
-function getGreetingTime(lang: "en" | "ko") {
-    const h = new Date().getHours();
-    if (h < 12) return TEXTS.morning[lang];
-    if (h < 18) return TEXTS.afternoon[lang];
-    return TEXTS.evening[lang];
-}
 
 /** Pick a "daily" verse from VERSES using the day-of-year as seed */
 function getDailyVerse() {
@@ -93,9 +72,6 @@ export function UserDashboard() {
     }, [allProgress, language, profile]);
 
     const dailyVerse = useMemo(() => getDailyVerse(), []);
-    const today = new Date();
-    const dayName = DAY_OF_WEEK[today.getDay()][lang];
-    const displayName = profile?.displayName?.split(" ")[0] || "";
 
     if (loading) return null;
 
@@ -111,27 +87,16 @@ export function UserDashboard() {
             )}
 
             <div className="w-full max-w-7xl mx-auto px-4 md:px-10">
-                <div className="bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-3xl p-5 md:p-7 shadow-sm">
+                <div className="bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-3xl p-4 md:p-5 shadow-sm">
 
                     {/* ══════════════════════════════════════════════
                         GRID: Left (main CTA) | Right (extras)
                     ══════════════════════════════════════════════ */}
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
 
-                        {/* ── LEFT: greeting + stats + CTA ── */}
-                        <div className="flex flex-col gap-5">
+                        {/* ── LEFT: stats + CTA ── */}
+                        <div className="flex flex-col gap-4">
 
-                            {/* Greeting row */}
-                            <div>
-                                <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">
-                                    {dayName}
-                                </p>
-                                <h2 className="text-xl md:text-2xl font-bold text-stone-800 mt-0.5">
-                                    {lang === "ko"
-                                        ? `${displayName}님, ${getGreetingTime(lang)} 👋`
-                                        : `Good ${getGreetingTime(lang)}, ${displayName}! 👋`}
-                                </h2>
-                            </div>
 
                             {/* Stat pills */}
                             <div className="flex items-center gap-3 flex-wrap">
@@ -204,29 +169,29 @@ export function UserDashboard() {
 
                         {/* ── RIGHT: Today's Verse card ── */}
                         {dailyVerse && (
-                            <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow">
+                            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2.5 hover:shadow-md transition-shadow">
                                 {/* Label */}
                                 <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                                    <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse" />
+                                    <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                                         {TEXTS.todayVerse[lang]}
                                     </span>
                                 </div>
 
                                 {/* Reference */}
-                                <p className="text-sm font-bold text-rose-600 font-serif italic">
+                                <p className="text-xs font-semibold text-stone-700 font-serif italic">
                                     — {dailyVerse.reference[language]}
                                 </p>
 
                                 {/* Text */}
-                                <p className="text-stone-700 text-sm leading-relaxed line-clamp-5 font-reading">
+                                <p className="text-stone-600 text-xs leading-relaxed line-clamp-5 font-reading">
                                     {dailyVerse.text[language]}
                                 </p>
 
                                 {/* CTA */}
                                 <button
                                     onClick={() => router.push(`/series/${dailyVerse.seriesId}`)}
-                                    className="mt-auto w-full text-center text-xs font-bold text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-400 rounded-xl py-2.5 transition-all"
+                                    className="mt-auto w-full text-center text-[11px] font-bold text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-400 rounded-xl py-2 transition-all"
                                 >
                                     {lang === "ko" ? "이 구절 외우기 →" : "Memorize this verse →"}
                                 </button>
