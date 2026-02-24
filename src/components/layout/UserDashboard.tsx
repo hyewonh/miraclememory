@@ -89,13 +89,13 @@ export function UserDashboard() {
             <div className="w-full max-w-7xl mx-auto px-4 md:px-10">
                 <div className="bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-3xl p-4 md:p-5 shadow-sm">
 
-                    {/* 3-column grid: Stats | CTA | Today's Verse */}
-                    <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_280px] gap-4 md:gap-0 md:divide-x md:divide-stone-200">
+                    {/* 3-column grid equal thirds: Stats | CTA | Today's Verse */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0 md:divide-x md:divide-stone-200 md:items-start">
 
-                        {/* ── COL 1: Stat pills ── */}
-                        <div className="flex md:flex-col items-center md:items-start justify-center gap-3 md:pr-6">
-                            {/* Streak */}
-                            <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                        {/* ── COL 1 (1/3): Stat items ── */}
+                        <div className="flex flex-col gap-3 md:pr-6">
+                            {/* Daily Streak */}
+                            <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
                                 <span className="text-2xl">🔥</span>
                                 <div>
                                     <div className="text-xl font-black text-amber-500 leading-none">{stats.streak}</div>
@@ -103,8 +103,8 @@ export function UserDashboard() {
                                 </div>
                             </div>
 
-                            {/* Verses memorized */}
-                            <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                            {/* Memorized Verses */}
+                            <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
                                 <span className="text-2xl">📖</span>
                                 <div>
                                     <div className="text-xl font-black text-emerald-500 leading-none">{stats.totalVerses}</div>
@@ -116,7 +116,7 @@ export function UserDashboard() {
                             {reviewItems.length > 0 && (
                                 <button
                                     onClick={() => setShowReviewModal(true)}
-                                    className="flex items-center gap-2 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 shadow-sm hover:bg-amber-100 transition-all"
+                                    className="flex items-center gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 shadow-sm hover:bg-amber-100 transition-all"
                                 >
                                     <span className="text-2xl">⏰</span>
                                     <div>
@@ -127,64 +127,76 @@ export function UserDashboard() {
                             )}
                         </div>
 
-                        {/* ── COL 2: Resume / Start CTA ── */}
-                        <div className="flex flex-col justify-center md:px-8">
+                        {/* ── COL 2 (1/3): Resume / Start CTA ── */}
+                        <div className="flex flex-col justify-center items-start md:px-8">
                             {stats.lastSeries ? (
-                                <>
-                                    <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
-                                        {TEXTS.continueWhere[lang]}
-                                    </p>
-                                    <h3 className="text-base md:text-lg font-bold text-stone-800 mb-3 truncate max-w-full">
-                                        {stats.lastSeries.title[language]}
-                                    </h3>
-                                    <button
-                                        onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
-                                        className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm w-fit"
-                                    >
-                                        {TEXTS.resumeLearning[lang]}
-                                    </button>
-                                </>
+                                /* Mobile: row (text left / button right) | Desktop: col */
+                                <div className="flex flex-row md:flex-col items-center md:items-start gap-4 w-full">
+                                    {/* Left: text */}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
+                                            {TEXTS.continueWhere[lang]}
+                                        </p>
+                                        <h3 className="text-base md:text-lg font-bold text-stone-800 md:mb-3 truncate">
+                                            {stats.lastSeries.title[language]}
+                                        </h3>
+                                    </div>
+                                    {/* Right: button */}
+                                    <div className="flex-shrink-0">
+                                        <button
+                                            onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
+                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm whitespace-nowrap"
+                                        >
+                                            {TEXTS.resumeLearning[lang]}
+                                        </button>
+                                    </div>
+                                </div>
                             ) : (
-                                <>
-                                    <p className="text-stone-500 text-sm mb-3">{TEXTS.startPrompt[lang]}</p>
-                                    <button
-                                        onClick={() => document.getElementById("series")?.scrollIntoView({ behavior: "smooth" })}
-                                        className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm w-fit"
-                                    >
-                                        {TEXTS.browseSeries[lang]}
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                </>
+                                <div className="flex flex-row md:flex-col items-center md:items-start gap-4 w-full">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
+                                            {lang === "ko" ? "첫 단계를 시작하세요" : "Begin your journey"}
+                                        </p>
+                                        <h3 className="text-base md:text-lg font-bold text-stone-800 md:mb-1 truncate">
+                                            {lang === "ko" ? "시리즈를 선택하세요" : "Pick a Series"}
+                                        </h3>
+                                        <p className="text-xs text-stone-500 hidden md:block">
+                                            {lang === "ko" ? "한 구절씩, 말씨를 외워보세요." : "Memorize scripture one verse at a time."}
+                                        </p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <button
+                                            onClick={() => document.getElementById("series")?.scrollIntoView({ behavior: "smooth" })}
+                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm whitespace-nowrap"
+                                        >
+                                            {lang === "ko" ? "시리즈 보기" : "Browse Series"}
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
 
-                        {/* ── COL 3: Today's Verse card ── */}
+                        {/* ── COL 3 (1/3): Today's Verse ── */}
                         {dailyVerse && (
-                            <div className="flex flex-col gap-2.5 md:pl-6">
-                                {/* Label */}
+                            <div className="flex flex-col gap-2.5 bg-white border border-stone-200 rounded-2xl p-4 shadow-sm md:ml-6 overflow-hidden hover:shadow-md transition-shadow">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse" />
                                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                                         {TEXTS.todayVerse[lang]}
                                     </span>
                                 </div>
-
-                                {/* Reference */}
                                 <p className="text-xs font-semibold text-stone-700 font-serif italic">
                                     — {dailyVerse.reference[language]}
                                 </p>
-
-                                {/* Text */}
-                                <p className="text-stone-600 text-xs leading-relaxed line-clamp-4 font-reading flex-1">
+                                <p className="text-stone-600 text-xs leading-relaxed line-clamp-2 font-reading">
                                     {dailyVerse.text[language]}
                                 </p>
-
-                                {/* CTA */}
                                 <button
                                     onClick={() => router.push(`/series/${dailyVerse.seriesId}`)}
-                                    className="w-full text-center text-[11px] font-bold text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-400 rounded-xl py-2 transition-all mt-auto"
+                                    className="w-full text-center text-[11px] font-bold text-white bg-stone-800 hover:bg-stone-700 rounded-xl py-2 transition-all mt-auto"
                                 >
                                     {lang === "ko" ? "이 구절 외우기 →" : "Memorize this verse →"}
                                 </button>
