@@ -59,8 +59,9 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         fire(0.1, { spread: 120, startVelocity: 45 });
     }, []);
 
-    // Characters that should be auto-filled (spaces and punctuation)
-    const isAutoFillChar = (char: string) => /[,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝\-｀：；"＇＜＞，．？/‘’“”–—]/.test(char);
+    // Auto-fill any character that is NOT a letter, digit, or whitespace
+    // Covers: , . : ; ! ? ' ' " " - — etc.
+    const isAutoFillChar = (char: string) => !/[\p{L}\p{N}\s]/u.test(char);
 
     // Use Intl.Segmenter to correctly split multi-byte characters like Korean
     const stringToChars = useCallback((str: string) => {
@@ -88,21 +89,14 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
     const checkCompletion = useCallback((newTypedChars: string[]) => {
         if (completedFired.current) return;
+        if (newTypedChars.length < fullTextChars.length) return;
 
-        // Simple: all chars filled + none are wrong = complete
-        const isFullyTyped = newTypedChars.length >= fullTextChars.length;
-        if (!isFullyTyped) return;
+        // Normalize both sides to plain strings for comparison
+        // This avoids char-by-char index issues with smart quotes, em-dashes, etc.
+        const typedStr = newTypedChars.slice(0, fullTextChars.length).map(c => normalizeChar(c)).join('');
+        const expectedStr = fullTextChars.map(c => normalizeChar(c)).join('');
 
-        // Check every char matches
-        let allCorrect = true;
-        for (let i = 0; i < fullTextChars.length; i++) {
-            if (normalizeChar(newTypedChars[i]) !== normalizeChar(fullTextChars[i])) {
-                allCorrect = false;
-                break;
-            }
-        }
-
-        if (allCorrect) {
+        if (typedStr === expectedStr) {
             completedFired.current = true;
             setCompleted(true);
             fireConfetti();
