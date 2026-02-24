@@ -675,7 +675,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                     if (showAllHidden) {
                                         // Round 5: everything is gray dots
                                         return (
-                                            <span key={i} className="inline-flex items-center gap-[2px]">
+                                            <span key={i} className="inline-flex items-center gap-[2px] min-h-[1.5em]">
                                                 {Array.from({ length: word.length }).map((_, j) => (
                                                     <span key={j} className="inline-block rounded-full bg-stone-300"
                                                         style={{ width: '0.5em', height: '0.5em' }} />
@@ -687,7 +687,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                     if (showFirstLetterOnly) {
                                         // Round 4: first letter only + dots
                                         return (
-                                            <span key={i} className="inline-flex items-center gap-[2px]">
+                                            <span key={i} className="inline-flex items-center gap-[2px] min-h-[1.5em]">
                                                 <span className="text-rose-600 font-bold">{word[0]}</span>
                                                 {Array.from({ length: word.length - 1 }).map((_, j) => (
                                                     <span key={j} className="inline-block rounded-full bg-stone-300"
@@ -700,7 +700,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                     if (isHidden) {
                                         // Hidden word: first letter visible + dots for the rest
                                         return (
-                                            <span key={i} className="inline-flex items-center gap-[2px]">
+                                            <span key={i} className="inline-flex items-center gap-[2px] min-h-[1.5em]">
                                                 <span className="text-rose-600 font-bold">{word[0]}</span>
                                                 {Array.from({ length: word.length - 1 }).map((_, j) => (
                                                     <span key={j} className="inline-block rounded-full bg-stone-300"
@@ -711,7 +711,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                                     }
 
                                     // Visible word
-                                    return <span key={i} className="text-stone-900">{word}</span>;
+                                    return <span key={i} className="text-stone-900 min-h-[1.5em] inline-flex items-center">{word}</span>;
                                 })}
                             </div>
                             <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
