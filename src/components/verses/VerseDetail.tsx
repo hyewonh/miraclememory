@@ -2,7 +2,6 @@
 
 import { Verse } from "@/types";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useLiveBibleText } from "@/hooks/useLiveBibleText";
 import { cn } from "@/lib/utils";
 import { useProgress } from "@/hooks/useProgress";
 import html2canvas from "html2canvas";
@@ -100,13 +99,6 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
     const { isMemorized, toggleVerseMemorized } = useProgress(verse.seriesId);
     const t = UI_TEXT.bible;
     const tl = (obj: Record<string, string>) => obj[language] ?? obj["en"];
-
-    // Live Bible text
-    const { text: liveText } = useLiveBibleText({
-        reference: verse.reference.en,
-        language,
-        fallback: verse.text[language],
-    });
 
     // ── Core state ─────────────────────────────────────────
     const [isRecording, setIsRecording] = useState(false);
@@ -495,7 +487,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                     <div className="flex flex-col items-center gap-6">
                         {/* Full text + reference */}
                         <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed text-center">
-                            {liveText}
+                            {verse.text[language]}
                         </div>
                         <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
                         {/* Step Indicator — clickable */}
@@ -554,7 +546,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
                     <div className="flex flex-col items-center gap-6">
                         {/* Full text + reference */}
                         <div className="text-xl md:text-2xl font-reading font-bold text-stone-900 leading-relaxed text-center">
-                            {liveText}
+                            {verse.text[language]}
                         </div>
                         <p className="text-lg text-rose-900 font-serif italic font-medium -mt-4">— {verse.reference[language]}</p>
                         {/* Step Indicator — clickable */}
@@ -623,7 +615,7 @@ export function VerseDetail({ verse, language, onRestrictedAction, onLoginRequir
 
                 {/* ─── STEP 3: Shadowing — Progressive word hiding ────── */}
                 {practiceStep === 3 && (() => {
-                    const words = liveText.split(' ').filter(w => w.length > 0);
+                    const words = verse.text[language].split(' ').filter((w: string) => w.length > 0);
                     const totalWords = words.length;
                     const completedReps = shadowReps.filter(Boolean).length;
                     const allShadowRepsChecked = shadowReps.every(Boolean);
