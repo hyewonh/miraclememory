@@ -29,6 +29,15 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
     const fullText = text.normalize('NFC');
 
+    // Reset state when text or language changes
+    useEffect(() => {
+        setTyped("");
+        setCompleted(false);
+        completedFired.current = false;
+        isComposingRef.current = false;
+        lastValueRef.current = "";
+    }, [text, language]);
+
     // Focus on mount
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -51,7 +60,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     }, []);
 
     // Characters that should be auto-filled (spaces and punctuation)
-    const isAutoFillChar = (char: string) => /[\s,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝\-｀：；"＇＜＞，．？/]/.test(char) || char === ' ';
+    const isAutoFillChar = (char: string) => /[,.:;?!"\-'`()\[\]{}★☆♡♥~！＠＃＄％＾＆＊（）＿＋＝\-｀：；"＇＜＞，．？/]/.test(char);
 
     // Use Intl.Segmenter to correctly split multi-byte characters like Korean
     const stringToChars = useCallback((str: string) => {
@@ -63,17 +72,26 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const fullTextChars = stringToChars(fullText);
     const totalTypeable = fullTextChars.length;
 
-    const checkCompletion = useCallback((newTyped: string, newTypedChars: string[]) => {
+    // Normalize a char: NFC + unify whitespace variants
+    const normalizeChar = useCallback((ch: string | undefined): string => {
+        if (!ch) return '';
+        const nfc = ch.normalize('NFC');
+        // Treat all whitespace variants as regular space
+        if (/^\s$/.test(nfc) || nfc === '\u00A0' || nfc === '\u3000') return ' ';
+        return nfc;
+    }, []);
+
+    const checkCompletion = useCallback((newTypedChars: string[]) => {
         if (completedFired.current) return;
 
         // Simple: all chars filled + none are wrong = complete
         const isFullyTyped = newTypedChars.length >= fullTextChars.length;
         if (!isFullyTyped) return;
 
-        // Check every char matches (same logic as getCharState)
+        // Check every char matches
         let allCorrect = true;
         for (let i = 0; i < fullTextChars.length; i++) {
-            if (newTypedChars[i]?.normalize('NFC') !== fullTextChars[i]) {
+            if (normalizeChar(newTypedChars[i]) !== normalizeChar(fullTextChars[i])) {
                 allCorrect = false;
                 break;
             }
@@ -86,7 +104,14 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
             setTimeout(() => { fireConfetti(); }, 700);
             onComplete?.();
         }
-    }, [fullTextChars, fireConfetti, onComplete]);
+    }, [fullTextChars, normalizeChar, fireConfetti, onComplete]);
+
+    // Belt-and-suspenders: check completion whenever typed state changes
+    useEffect(() => {
+        if (completed || completedFired.current) return;
+        const chars = stringToChars(typed);
+        checkCompletion(chars);
+    }, [typed, completed, stringToChars, checkCompletion]);
 
     const applyAutoFill = useCallback((val: string): string => {
         let newTyped = val;
@@ -139,7 +164,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
             }
             setTyped(newTyped);
             lastValueRef.current = newTyped;
-            checkCompletion(newTyped, newTypedChars);
+            checkCompletion(newTypedChars);
             return;
         }
 
@@ -149,7 +174,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
         setTyped(processed);
         lastValueRef.current = processed;
-        checkCompletion(processed, processedChars);
+        checkCompletion(processedChars);
     };
 
     const handleCompositionStart = () => {
@@ -166,7 +191,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
         setTyped(processed);
         lastValueRef.current = processed;
-        checkCompletion(processed, processedChars);
+        checkCompletion(processedChars);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -180,7 +205,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
     const getCharState = (idx: number): CharState => {
         if (idx >= typedCharsState.length) return "hidden";
-        return typedCharsState[idx].normalize('NFC') === fullTextChars[idx] ? "correct" : "wrong";
+        return normalizeChar(typedCharsState[idx]) === normalizeChar(fullTextChars[idx]) ? "correct" : "wrong";
     };
 
     // Current cursor position = typedCharsState.length (next char to type)
@@ -242,8 +267,16 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
 
                         if (char === ' ') {
                             return (
-                                <span key={idx} className="relative">
-                                    <span className="w-3 inline-block" />
+                                <span key={idx} className="relative inline-flex items-center justify-center" style={{ width: "0.8em" }}>
+                                    {state === "hidden" && (
+                                        <span className="text-stone-300 text-sm">·</span>
+                                    )}
+                                    {state === "correct" && (
+                                        <span className="w-3 inline-block" />
+                                    )}
+                                    {state === "wrong" && (
+                                        <span className="w-3 inline-block bg-rose-200 rounded" />
+                                    )}
                                     {isCursor && (
                                         <span className="absolute left-0 top-0 h-full w-0.5 bg-amber-500 animate-pulse" />
                                     )}
