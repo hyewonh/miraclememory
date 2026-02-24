@@ -89,87 +89,80 @@ export function UserDashboard() {
             <div className="w-full max-w-7xl mx-auto px-4 md:px-10">
                 <div className="bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-200 rounded-3xl p-4 md:p-5 shadow-sm">
 
-                    {/* ══════════════════════════════════════════════
-                        GRID: Left (main CTA) | Right (extras)
-                    ══════════════════════════════════════════════ */}
-                    <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-6">
+                    {/* 3-column grid: Stats | CTA | Today's Verse */}
+                    <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_280px] gap-4 md:gap-0 md:divide-x md:divide-stone-200">
 
-                        {/* ── LEFT: stats + CTA ── */}
-                        <div className="flex flex-col gap-4">
-
-
-                            {/* Stat pills */}
-                            <div className="flex items-center gap-3 flex-wrap">
-                                {/* Streak */}
-                                <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
-                                    <span className="text-2xl">🔥</span>
-                                    <div>
-                                        <div className="text-xl font-black text-amber-500 leading-none">{stats.streak}</div>
-                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.streak[lang]}</div>
-                                    </div>
+                        {/* ── COL 1: Stat pills ── */}
+                        <div className="flex md:flex-col items-center md:items-start justify-center gap-3 md:pr-6">
+                            {/* Streak */}
+                            <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                                <span className="text-2xl">🔥</span>
+                                <div>
+                                    <div className="text-xl font-black text-amber-500 leading-none">{stats.streak}</div>
+                                    <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.streak[lang]}</div>
                                 </div>
-
-                                {/* Verses memorized */}
-                                <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
-                                    <span className="text-2xl">📖</span>
-                                    <div>
-                                        <div className="text-xl font-black text-emerald-500 leading-none">{stats.totalVerses}</div>
-                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.verses[lang]}</div>
-                                    </div>
-                                </div>
-
-                                {/* Review badge — only if there are items */}
-                                {reviewItems.length > 0 && (
-                                    <button
-                                        onClick={() => setShowReviewModal(true)}
-                                        className="flex items-center gap-2 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 shadow-sm hover:bg-amber-100 transition-all group"
-                                    >
-                                        <span className="text-2xl">⏰</span>
-                                        <div>
-                                            <div className="text-xl font-black text-amber-600 leading-none">{reviewItems.length}</div>
-                                            <div className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">{TEXTS.reviewDue[lang]}</div>
-                                        </div>
-                                    </button>
-                                )}
                             </div>
 
-                            {/* Resume / Start CTA */}
-                            <div>
-                                {stats.lastSeries ? (
-                                    <>
-                                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
-                                            {TEXTS.continueWhere[lang]}
-                                        </p>
-                                        <h3 className="text-base md:text-lg font-bold text-stone-800 mb-3 truncate max-w-full">
-                                            {stats.lastSeries.title[language]}
-                                        </h3>
-                                        <button
-                                            onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
-                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
-                                        >
-                                            {TEXTS.resumeLearning[lang]}
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-stone-500 text-sm mb-3">{TEXTS.startPrompt[lang]}</p>
-                                        <button
-                                            onClick={() => document.getElementById("series")?.scrollIntoView({ behavior: "smooth" })}
-                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm"
-                                        >
-                                            {TEXTS.browseSeries[lang]}
-                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </button>
-                                    </>
-                                )}
+                            {/* Verses memorized */}
+                            <div className="flex items-center gap-2 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                                <span className="text-2xl">📖</span>
+                                <div>
+                                    <div className="text-xl font-black text-emerald-500 leading-none">{stats.totalVerses}</div>
+                                    <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.verses[lang]}</div>
+                                </div>
                             </div>
+
+                            {/* Review badge — only if there are items */}
+                            {reviewItems.length > 0 && (
+                                <button
+                                    onClick={() => setShowReviewModal(true)}
+                                    className="flex items-center gap-2 bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3 shadow-sm hover:bg-amber-100 transition-all"
+                                >
+                                    <span className="text-2xl">⏰</span>
+                                    <div>
+                                        <div className="text-xl font-black text-amber-600 leading-none">{reviewItems.length}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">{TEXTS.reviewDue[lang]}</div>
+                                    </div>
+                                </button>
+                            )}
                         </div>
 
-                        {/* ── RIGHT: Today's Verse card ── */}
+                        {/* ── COL 2: Resume / Start CTA ── */}
+                        <div className="flex flex-col justify-center md:px-8">
+                            {stats.lastSeries ? (
+                                <>
+                                    <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
+                                        {TEXTS.continueWhere[lang]}
+                                    </p>
+                                    <h3 className="text-base md:text-lg font-bold text-stone-800 mb-3 truncate max-w-full">
+                                        {stats.lastSeries.title[language]}
+                                    </h3>
+                                    <button
+                                        onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
+                                        className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm w-fit"
+                                    >
+                                        {TEXTS.resumeLearning[lang]}
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-stone-500 text-sm mb-3">{TEXTS.startPrompt[lang]}</p>
+                                    <button
+                                        onClick={() => document.getElementById("series")?.scrollIntoView({ behavior: "smooth" })}
+                                        className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm w-fit"
+                                    >
+                                        {TEXTS.browseSeries[lang]}
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
+                        {/* ── COL 3: Today's Verse card ── */}
                         {dailyVerse && (
-                            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm flex flex-col gap-2.5 hover:shadow-md transition-shadow">
+                            <div className="flex flex-col gap-2.5 md:pl-6">
                                 {/* Label */}
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse" />
@@ -184,20 +177,21 @@ export function UserDashboard() {
                                 </p>
 
                                 {/* Text */}
-                                <p className="text-stone-600 text-xs leading-relaxed line-clamp-5 font-reading">
+                                <p className="text-stone-600 text-xs leading-relaxed line-clamp-4 font-reading flex-1">
                                     {dailyVerse.text[language]}
                                 </p>
 
                                 {/* CTA */}
                                 <button
                                     onClick={() => router.push(`/series/${dailyVerse.seriesId}`)}
-                                    className="mt-auto w-full text-center text-[11px] font-bold text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-400 rounded-xl py-2 transition-all"
+                                    className="w-full text-center text-[11px] font-bold text-stone-500 hover:text-stone-800 border border-stone-200 hover:border-stone-400 rounded-xl py-2 transition-all mt-auto"
                                 >
                                     {lang === "ko" ? "이 구절 외우기 →" : "Memorize this verse →"}
                                 </button>
                             </div>
                         )}
                     </div>
+
                 </div>
             </div>
         </>
