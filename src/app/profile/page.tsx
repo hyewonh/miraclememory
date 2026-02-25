@@ -192,9 +192,9 @@ export default function ProfilePage() {
                         className="text-stone-500 hover:text-stone-900 font-medium text-sm flex items-center gap-2 transition-colors"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                        Back to Home
+                        {UI_TEXT.profile.backToHome[language]}
                     </button>
-                    <span className="font-bold text-stone-900 tracking-wider uppercase text-sm">My Profile</span>
+                    <span className="font-bold text-stone-900 tracking-wider uppercase text-sm">{UI_TEXT.profile.myProfile[language]}</span>
                     <div className="w-20" />
                 </div>
             </nav>
@@ -215,7 +215,7 @@ export default function ProfilePage() {
                         {mySeries.length > 0 && (
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-serif font-bold text-stone-900 pl-2 border-l-4 border-amber-400">
-                                    My Series
+                                    {UI_TEXT.profile.mySeries[language]}
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {mySeries.map(series => (
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                         {(mySeries.length === 0 && customSeries.length === 0) ? (
                             <div className="space-y-6">
                                 <h2 className="text-2xl font-serif font-bold text-stone-900 pl-2 border-l-4 border-amber-400">
-                                    My Series
+                                    {UI_TEXT.profile.mySeries[language]}
                                 </h2>
                                 <div className="bg-white rounded-2xl p-8 text-center border border-stone-100 border-dashed">
                                     <p className="text-stone-500 mb-4">{UI_TEXT.profile.noSeries[language]}</p>

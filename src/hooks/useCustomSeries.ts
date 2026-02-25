@@ -106,7 +106,7 @@ export function useCustomSeries() {
             description: cs.description,
             verses: cs.verses,
             ownerUid: user.uid,
-            ownerName: user.displayName || "익명",
+            ownerName: user.displayName || "Anonymous",
             createdAt: cs.createdAt,
             shareId,
         };

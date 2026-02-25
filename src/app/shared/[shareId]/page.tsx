@@ -73,10 +73,10 @@ export default function SharedSeriesPage() {
     if (notFound || !shared) return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-stone-50 gap-4 px-6 text-center">
             <div className="text-5xl">📭</div>
-            <h2 className="text-2xl font-bold text-stone-900">시리즈를 찾을 수 없어요</h2>
-            <p className="text-stone-400 text-sm">링크가 만료되었거나 삭제된 시리즈입니다.</p>
+            <h2 className="text-2xl font-bold text-stone-900">{UI_TEXT.shared.notFound[language]}</h2>
+            <p className="text-stone-400 text-sm">{UI_TEXT.shared.notFoundDesc[language]}</p>
             <button onClick={() => router.push("/")} className="mt-2 bg-stone-900 text-white px-6 py-3 rounded-xl font-bold text-sm">
-                홈으로
+                {UI_TEXT.shared.goHome[language]}
             </button>
         </div>
     );
@@ -109,7 +109,7 @@ export default function SharedSeriesPage() {
                     </button>
                     <span className="text-stone-300 hidden sm:inline">|</span>
                     <h1 className="text-sm font-bold text-stone-800 truncate">
-                        {shared.title} <span className="text-xs text-stone-400 font-normal">by {shared.ownerName}</span>
+                        {shared.title} <span className="text-xs text-stone-400 font-normal">{UI_TEXT.shared.by[language]} {shared.ownerName}</span>
                     </h1>
                 </div>
 
@@ -119,13 +119,13 @@ export default function SharedSeriesPage() {
                         disabled={importing}
                         className="bg-amber-500 hover:bg-amber-400 text-white font-bold px-4 py-1.5 rounded-full text-xs transition-all shadow-sm flex-shrink-0 disabled:opacity-50"
                     >
-                        {importing ? "..." : user ? "내 시리즈에 추가" : "로그인 후 추가"}
+                        {importing ? "..." : user ? UI_TEXT.shared.addToMySeries[language] : UI_TEXT.shared.loginToAdd[language]}
                     </button>
                 )}
                 {imported && (
                     <span className="text-emerald-600 font-bold text-xs flex items-center gap-1 flex-shrink-0">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                        추가됨
+                        {UI_TEXT.shared.added[language]}
                     </span>
                 )}
             </div>
@@ -158,7 +158,7 @@ export default function SharedSeriesPage() {
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                             </svg>
-                                            Previous
+                                            {UI_TEXT.customSeries.previous[language]}
                                         </button>
                                         <span className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
                                             {activeIndex + 1} / {totalVerses}
@@ -176,7 +176,7 @@ export default function SharedSeriesPage() {
                                             disabled={activeIndex === shared.verses.length - 1}
                                             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                         >
-                                            Next
+                                            {UI_TEXT.customSeries.next[language]}
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                             </svg>
@@ -188,7 +188,7 @@ export default function SharedSeriesPage() {
                             {/* Mobile: Inline verse list */}
                             <div className="md:hidden mt-8">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3">
-                                    {shared.title} · {totalVerses} verses
+                                    {shared.title} · {totalVerses} {UI_TEXT.customSeries.verses[language]}
                                 </p>
                                 <div className="flex flex-col divide-y divide-stone-100 rounded-2xl bg-white shadow-sm overflow-hidden border border-stone-100">
                                     {shared.verses.map((verse, idx) => {
@@ -248,7 +248,7 @@ export default function SharedSeriesPage() {
                         <div className="hidden md:flex flex-col w-72 lg:w-80 flex-shrink-0 bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden sticky top-4 max-h-[calc(100vh-120px)]">
                             <div className="px-4 py-3 border-b border-stone-50 flex-shrink-0">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                    {shared.title} · {totalVerses} verses
+                                    {shared.title} · {totalVerses} {UI_TEXT.customSeries.verses[language]}
                                 </p>
                             </div>
                             <div className="flex-1 overflow-y-auto">

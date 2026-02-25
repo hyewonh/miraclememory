@@ -87,12 +87,12 @@ export default function CustomSeriesPage() {
             <div className="h-screen bg-[#fdfbf7] flex flex-col">
                 <Navbar className="bg-white border-b border-stone-100" />
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                    <p className="text-stone-500 mb-4 font-medium text-lg">Custom series not found.</p>
+                    <p className="text-stone-500 mb-4 font-medium text-lg">{UI_TEXT.customSeries.notFound[language]}</p>
                     <button
                         onClick={() => router.push('/profile')}
                         className="bg-stone-900 text-white px-6 py-2.5 rounded-full font-bold text-sm hover:bg-stone-800 transition-colors"
                     >
-                        Return to Profile
+                        {UI_TEXT.customSeries.returnToProfile[language]}
                     </button>
                 </div>
             </div>
@@ -175,7 +175,7 @@ export default function CustomSeriesPage() {
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                             </svg>
-                                            Previous
+                                            {UI_TEXT.customSeries.previous[language]}
                                         </button>
                                         <span className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
                                             {activeIndex + 1} / {totalVerses}
@@ -193,7 +193,7 @@ export default function CustomSeriesPage() {
                                             disabled={activeIndex === verses.length - 1}
                                             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                         >
-                                            Next
+                                            {UI_TEXT.customSeries.next[language]}
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                             </svg>
@@ -202,14 +202,14 @@ export default function CustomSeriesPage() {
                                 </>
                             ) : (
                                 <div className="flex items-center justify-center h-48 text-stone-400">
-                                    Select a verse to begin
+                                    {UI_TEXT.customSeries.selectVerse[language]}
                                 </div>
                             )}
 
                             {/* Mobile: Inline verse list below the card */}
                             <div className="md:hidden mt-8">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3">
-                                    Memory Queue · {totalVerses} verses
+                                    {UI_TEXT.customSeries.memoryQueue[language]} · {totalVerses} {UI_TEXT.customSeries.verses[language]}
                                 </p>
                                 <div className="flex flex-col divide-y divide-stone-100 rounded-2xl bg-white shadow-sm overflow-hidden border border-stone-100">
                                     {verses.map((verse, idx) => {
@@ -256,7 +256,7 @@ export default function CustomSeriesPage() {
                                                     </svg>
                                                 )}
                                                 {isVerseMemorized && !isLocked && !isActive && (
-                                                    <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase">done</span>
+                                                    <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase">{UI_TEXT.customSeries.done[language]}</span>
                                                 )}
                                             </button>
                                         );
@@ -269,7 +269,7 @@ export default function CustomSeriesPage() {
                         <div className="hidden md:flex flex-col w-72 lg:w-80 flex-shrink-0 bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden sticky top-4 max-h-[calc(100vh-120px)]">
                             <div className="px-4 py-3 border-b border-stone-50 flex-shrink-0">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                    Memory Queue · {totalVerses} verses
+                                    {UI_TEXT.customSeries.memoryQueue[language]} · {totalVerses} {UI_TEXT.customSeries.verses[language]}
                                 </p>
                             </div>
                             <div className="flex-1 overflow-y-auto">
@@ -316,7 +316,7 @@ export default function CustomSeriesPage() {
                                                 </svg>
                                             )}
                                             {isVerseMemorized && !isLocked && !isActive && (
-                                                <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase">done</span>
+                                                <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase">{UI_TEXT.customSeries.done[language]}</span>
                                             )}
                                         </button>
                                     );

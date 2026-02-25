@@ -8,6 +8,8 @@ import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useCustomSeries } from "@/hooks/useCustomSeries";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
+import { UI_TEXT } from "@/data/translations";
 
 // ---------- REACTION BUTTON ----------
 function ReactionBtn({
@@ -32,6 +34,7 @@ function ReactionBtn({
 // ---------- COMMENT MODAL ----------
 function CommentModal({ post, onClose }: { post: CommunityPost; onClose: () => void }) {
     const { user } = useAuth();
+    const { language } = useLanguage();
     const { comments, loading, addComment } = useComments(post.shareId);
     const [text, setText] = useState("");
     const [posting, setPosting] = useState(false);
@@ -59,7 +62,7 @@ function CommentModal({ post, onClose }: { post: CommunityPost; onClose: () => v
                 <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 flex-shrink-0">
                     <div>
                         <p className="font-bold text-stone-900 text-sm truncate">{post.title}</p>
-                        <p className="text-xs text-stone-400 mt-0.5">댓글 {post.commentCount}개</p>
+                        <p className="text-xs text-stone-400 mt-0.5">{UI_TEXT.community.comments[language]} {post.commentCount}{UI_TEXT.community.commentsCount[language]}</p>
                     </div>
                     <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,7 +78,7 @@ function CommentModal({ post, onClose }: { post: CommunityPost; onClose: () => v
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stone-300" />
                         </div>
                     ) : comments.length === 0 ? (
-                        <div className="text-center py-10 text-stone-400 text-sm">첫 번째 댓글을 남겨보세요 💬</div>
+                        <div className="text-center py-10 text-stone-400 text-sm">{UI_TEXT.community.firstComment[language]}</div>
                     ) : (
                         comments.map(c => (
                             <div key={c.id} className="flex gap-3">
@@ -104,7 +107,7 @@ function CommentModal({ post, onClose }: { post: CommunityPost; onClose: () => v
                             value={text}
                             onChange={e => setText(e.target.value.slice(0, 200))}
                             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
-                            placeholder="댓글을 입력하세요... (200자)"
+                            placeholder={UI_TEXT.community.commentPlaceholder[language]}
                             rows={2}
                             className="flex-1 resize-none text-sm border border-stone-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300 text-stone-700"
                         />
@@ -113,12 +116,12 @@ function CommentModal({ post, onClose }: { post: CommunityPost; onClose: () => v
                             disabled={posting || !text.trim()}
                             className="bg-amber-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-amber-400 transition-all disabled:opacity-40 flex-shrink-0"
                         >
-                            {posting ? "..." : "전송"}
+                            {posting ? "..." : UI_TEXT.community.send[language]}
                         </button>
                     </div>
                 ) : (
                     <div className="border-t border-stone-100 p-4 text-center">
-                        <p className="text-stone-400 text-sm">댓글은 로그인 후 남길 수 있어요</p>
+                        <p className="text-stone-400 text-sm">{UI_TEXT.community.loginToComment[language]}</p>
                     </div>
                 )}
             </div>
@@ -131,11 +134,12 @@ function SeriesCard({ post }: { post: CommunityPost }) {
     const { user } = useAuth();
     const { react } = useReaction(post.shareId);
     const { importSharedSeries } = useCustomSeries();
+    const { language } = useLanguage();
     const [showComments, setShowComments] = useState(false);
     const [importing, setImporting] = useState(false);
     const [imported, setImported] = useState(false);
 
-    const myReacted = (type: ReactionType) => !!user && post.reactions[type].includes(user.uid);
+    const myReacted = (type: ReactionType) => !!user && (post.reactions?.[type]?.includes(user.uid) ?? false);
 
     const handleReact = async (type: ReactionType) => {
         if (!user) return;
@@ -150,7 +154,7 @@ function SeriesCard({ post }: { post: CommunityPost }) {
         setImporting(false);
     };
 
-    const totalReactions = post.reactions.pray.length + post.reactions.heart.length + post.reactions.thumbs.length;
+    const totalReactions = (post.reactions?.pray?.length ?? 0) + (post.reactions?.heart?.length ?? 0) + (post.reactions?.thumbs?.length ?? 0);
 
     return (
         <>
@@ -177,7 +181,7 @@ function SeriesCard({ post }: { post: CommunityPost }) {
                                     : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
                             )}
                         >
-                            {imported ? "✓ 추가됨" : importing ? "..." : "+ 추가"}
+                            {imported ? UI_TEXT.community.added[language] : importing ? "..." : UI_TEXT.community.add[language]}
                         </button>
                     </div>
 
@@ -189,7 +193,7 @@ function SeriesCard({ post }: { post: CommunityPost }) {
                         <span className="text-xs text-stone-500">{post.ownerName}</span>
                         <span className="text-stone-200 text-xs">·</span>
                         <span className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full font-medium">
-                            {post.verses.length}구절
+                            {post.verses.length} {UI_TEXT.community.versesUnit[language]}
                         </span>
                         <span className="text-stone-200 text-xs">·</span>
                         <span className="text-xs text-stone-400">
@@ -201,10 +205,10 @@ function SeriesCard({ post }: { post: CommunityPost }) {
                     {post.verses[0] && (
                         <div className="bg-stone-50 rounded-xl p-3 mb-4 border border-stone-100">
                             <p className="text-stone-600 text-xs leading-relaxed line-clamp-2 italic">
-                                "{post.verses[0].text["ko"] ?? post.verses[0].text["en"] ?? ""}"
+                                "{post.verses[0].text[language] ?? post.verses[0].text["en"] ?? ""}"
                             </p>
                             <p className="text-amber-500 text-[10px] font-bold mt-1">
-                                {post.verses[0].reference["ko"] ?? post.verses[0].reference["en"] ?? ""}
+                                {post.verses[0].reference[language] ?? post.verses[0].reference["en"] ?? ""}
                             </p>
                         </div>
                     )}
@@ -212,15 +216,15 @@ function SeriesCard({ post }: { post: CommunityPost }) {
                     {/* Actions */}
                     <div className="flex items-center gap-2 flex-wrap">
                         <ReactionBtn
-                            emoji="🙏" count={post.reactions.pray.length}
+                            emoji="🙏" count={post.reactions?.pray?.length ?? 0}
                             active={myReacted("pray")} onClick={() => handleReact("pray")}
                         />
                         <ReactionBtn
-                            emoji="❤️" count={post.reactions.heart.length}
+                            emoji="❤️" count={post.reactions?.heart?.length ?? 0}
                             active={myReacted("heart")} onClick={() => handleReact("heart")}
                         />
                         <ReactionBtn
-                            emoji="👍" count={post.reactions.thumbs.length}
+                            emoji="👍" count={post.reactions?.thumbs?.length ?? 0}
                             active={myReacted("thumbs")} onClick={() => handleReact("thumbs")}
                         />
                         <button
@@ -230,15 +234,16 @@ function SeriesCard({ post }: { post: CommunityPost }) {
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
-                            {post.commentCount > 0 ? `댓글 ${post.commentCount}개` : "댓글"}
+                            {post.commentCount > 0 ? `${UI_TEXT.community.comments[language]} ${post.commentCount}${UI_TEXT.community.commentsCount[language]}` : UI_TEXT.community.comments[language]}
                         </button>
                     </div>
                 </div>
-            </div>
+            </div >
 
             {showComments && (
                 <CommentModal post={post} onClose={() => setShowComments(false)} />
-            )}
+            )
+            }
         </>
     );
 }
@@ -247,6 +252,7 @@ function SeriesCard({ post }: { post: CommunityPost }) {
 function LeaderboardTab() {
     const { entries, loading } = useLeaderboard(50);
     const { user } = useAuth();
+    const { language } = useLanguage();
 
     const rankEmoji = (i: number) => {
         if (i === 0) return "🥇";
@@ -264,8 +270,8 @@ function LeaderboardTab() {
     if (entries.length === 0) return (
         <div className="text-center py-16">
             <div className="text-5xl mb-4">🏆</div>
-            <h3 className="font-bold text-stone-700 text-lg mb-2">아직 랭킹이 없어요</h3>
-            <p className="text-stone-400 text-sm">구절을 외우면 랭킹에 올라와요!</p>
+            <h3 className="font-bold text-stone-700 text-lg mb-2">{UI_TEXT.community.noRanking[language]}</h3>
+            <p className="text-stone-400 text-sm">{UI_TEXT.community.noRankingDesc[language]}</p>
         </div>
     );
 
@@ -299,17 +305,17 @@ function LeaderboardTab() {
                     <div className="flex-1 min-w-0">
                         <p className="font-bold text-stone-900 text-sm truncate">
                             {entry.displayName}
-                            {entry.uid === user?.uid && <span className="text-amber-600 text-xs ml-1">(나)</span>}
+                            {entry.uid === user?.uid && <span className="text-amber-600 text-xs ml-1">{UI_TEXT.community.me[language]}</span>}
                         </p>
                         {entry.streakDays > 0 && (
-                            <p className="text-xs text-stone-400">🔥 {entry.streakDays}일 연속</p>
+                            <p className="text-xs text-stone-400">🔥 {entry.streakDays} {UI_TEXT.community.streakDays[language]}</p>
                         )}
                     </div>
 
                     {/* Score */}
                     <div className="text-right flex-shrink-0">
                         <p className="font-bold text-stone-900 text-lg">{entry.totalMemorized}</p>
-                        <p className="text-stone-400 text-[10px]">구절 암기</p>
+                        <p className="text-stone-400 text-[10px]">{UI_TEXT.community.versesMemorized[language]}</p>
                     </div>
                 </div>
             ))}
@@ -324,6 +330,7 @@ export default function CommunityPage() {
     const router = useRouter();
     const [tab, setTab] = useState<TabType>("feed");
     const { posts, loading } = useCommunityFeed(30);
+    const { language } = useLanguage();
 
     return (
         <div className="min-h-screen bg-stone-50 flex flex-col">
@@ -339,14 +346,14 @@ export default function CommunityPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
                         </button>
-                        <h1 className="font-bold text-stone-900 text-lg">커뮤니티</h1>
+                        <h1 className="font-bold text-stone-900 text-lg">{UI_TEXT.community.title[language]}</h1>
                     </div>
 
                     {/* Tabs */}
                     <div className="flex gap-1 pb-0">
                         {([
-                            { id: "feed", label: "🆕 최신 시리즈" },
-                            { id: "ranking", label: "🏆 랭킹" },
+                            { id: "feed", label: UI_TEXT.community.latestSeries[language] },
+                            { id: "ranking", label: UI_TEXT.community.ranking[language] },
                         ] as { id: TabType; label: string }[]).map(t => (
                             <button
                                 key={t.id}
@@ -375,29 +382,30 @@ export default function CommunityPage() {
                     ) : posts.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="text-5xl mb-4">📖</div>
-                            <h3 className="font-bold text-stone-700 text-lg mb-2">아직 공유된 시리즈가 없어요</h3>
-                            <p className="text-stone-400 text-sm mb-6">내 시리즈를 만들고 첫 번째로 공유해보세요!</p>
+                            <h3 className="font-bold text-stone-700 text-lg mb-2">{UI_TEXT.community.noSeries[language]}</h3>
+                            <p className="text-stone-400 text-sm mb-6">{UI_TEXT.community.noSeriesDesc[language]}</p>
                             <button
                                 onClick={() => router.push("/bible")}
                                 className="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-amber-400 transition-all"
                             >
-                                내 시리즈 만들기
+                                {UI_TEXT.community.createMySeries[language]}
                             </button>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <p className="text-xs text-stone-400 font-medium uppercase tracking-wider">
-                                {posts.length}개의 공유 시리즈
+                                {posts.length} {UI_TEXT.community.sharedSeries[language]}
                             </p>
                             {posts.map(post => (
                                 <SeriesCard key={post.shareId} post={post} />
                             ))}
                         </div>
                     )
-                )}
+                )
+                }
 
                 {tab === "ranking" && <LeaderboardTab />}
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }

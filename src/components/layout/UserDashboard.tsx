@@ -94,21 +94,24 @@ export function UserDashboard() {
 
                         {/* ── COL 1 (1/3): Stat items ── */}
                         <div className="flex flex-col gap-3 md:pr-6">
-                            {/* Daily Streak */}
-                            <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
-                                <span className="text-2xl">🔥</span>
-                                <div>
-                                    <div className="text-xl font-black text-amber-500 leading-none">{stats.streak}</div>
-                                    <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.streak[lang]}</div>
+                            {/* Streak + Verses: side-by-side on mobile, stacked on desktop */}
+                            <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
+                                {/* Daily Streak */}
+                                <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                                    <span className="text-2xl">🔥</span>
+                                    <div>
+                                        <div className="text-xl font-black text-amber-500 leading-none">{stats.streak}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.streak[lang]}</div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* Memorized Verses */}
-                            <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
-                                <span className="text-2xl">📖</span>
-                                <div>
-                                    <div className="text-xl font-black text-emerald-500 leading-none">{stats.totalVerses}</div>
-                                    <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.verses[lang]}</div>
+                                {/* Memorized Verses */}
+                                <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-2xl px-4 py-3 shadow-sm">
+                                    <span className="text-2xl">📖</span>
+                                    <div>
+                                        <div className="text-xl font-black text-emerald-500 leading-none">{stats.totalVerses}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.verses[lang]}</div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -130,44 +133,34 @@ export function UserDashboard() {
                         {/* ── COL 2 (1/3): Resume / Start CTA ── */}
                         <div className="flex flex-col justify-center items-start md:px-8">
                             {stats.lastSeries ? (
-                                /* Mobile: row (text left / button right) | Desktop: col */
-                                <div className="flex flex-row md:flex-col items-center md:items-start gap-4 w-full">
-                                    {/* Left: text */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
-                                            {TEXTS.continueWhere[lang]}
-                                        </p>
-                                        <h3 className="text-base md:text-lg font-bold text-stone-800 md:mb-3 truncate">
+                                <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm md:bg-transparent md:border-0 md:shadow-none md:p-0 w-full">
+                                    <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-2">
+                                        {TEXTS.continueWhere[lang]}
+                                    </p>
+                                    <div className="flex items-center justify-between gap-3 w-full">
+                                        <h3 className="text-base md:text-lg font-bold text-stone-800 truncate min-w-0">
                                             {stats.lastSeries.title[language]}
                                         </h3>
-                                    </div>
-                                    {/* Right: button */}
-                                    <div className="flex-shrink-0">
                                         <button
                                             onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
-                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm whitespace-nowrap"
+                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-5 py-2 rounded-full transition-all hover:scale-105 shadow-md text-xs whitespace-nowrap flex-shrink-0"
                                         >
                                             {TEXTS.resumeLearning[lang]}
                                         </button>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-row md:flex-col items-center md:items-start gap-4 w-full">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-1">
-                                            {lang === "ko" ? "첫 단계를 시작하세요" : "Begin your journey"}
-                                        </p>
-                                        <h3 className="text-base md:text-lg font-bold text-stone-800 md:mb-1 truncate">
+                                <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm md:bg-transparent md:border-0 md:shadow-none md:p-0 w-full">
+                                    <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-2">
+                                        {lang === "ko" ? "첫 단계를 시작하세요" : "Begin your journey"}
+                                    </p>
+                                    <div className="flex items-center justify-between gap-3 w-full">
+                                        <h3 className="text-base md:text-lg font-bold text-stone-800 truncate min-w-0">
                                             {lang === "ko" ? "시리즈를 선택하세요" : "Pick a Series"}
                                         </h3>
-                                        <p className="text-xs text-stone-500 hidden md:block">
-                                            {lang === "ko" ? "한 구절씩, 말씨를 외워보세요." : "Memorize scripture one verse at a time."}
-                                        </p>
-                                    </div>
-                                    <div className="flex-shrink-0">
                                         <button
                                             onClick={() => document.getElementById("series")?.scrollIntoView({ behavior: "smooth" })}
-                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-6 py-2.5 rounded-full transition-all hover:scale-105 shadow-md text-sm whitespace-nowrap"
+                                            className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-5 py-2 rounded-full transition-all hover:scale-105 shadow-md text-xs whitespace-nowrap flex-shrink-0"
                                         >
                                             {lang === "ko" ? "시리즈 보기" : "Browse Series"}
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -175,6 +168,9 @@ export function UserDashboard() {
                                             </svg>
                                         </button>
                                     </div>
+                                    <p className="text-xs text-stone-500 hidden md:block mt-1">
+                                        {lang === "ko" ? "한 구절씩, 말씨를 외워보세요." : "Memorize scripture one verse at a time."}
+                                    </p>
                                 </div>
                             )}
                         </div>
