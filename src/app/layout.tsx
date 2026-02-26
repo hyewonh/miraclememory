@@ -45,9 +45,6 @@ export const metadata: Metadata = {
     description: "Miracles happen in your life. Start memorizing scripture today in 6 languages.",
     images: ["/images/og-image.png"],
   },
-  icons: {
-    icon: "/favicon.ico",
-  },
 };
 
 export default function RootLayout({
