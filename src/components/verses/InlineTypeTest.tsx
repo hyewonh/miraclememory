@@ -73,10 +73,13 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
     const fullTextChars = stringToChars(fullText);
     const totalTypeable = fullTextChars.length;
 
-    // Normalize a char: NFC + unify whitespace variants
+    // Normalize a char: NFC + strip invisible chars + unify whitespace variants
     const normalizeChar = useCallback((ch: string | undefined): string => {
         if (!ch) return '';
-        const nfc = ch.normalize('NFC');
+        // Strip zero-width / invisible Unicode chars that Korean IME may inject
+        const stripped = ch.replace(/[\u200B\u200C\u200D\uFEFF\u200E\u200F\u00AD\u2060\u180E]/g, '');
+        if (!stripped) return ' '; // entirely invisible → treat as space
+        const nfc = stripped.normalize('NFC');
         // Treat all whitespace variants as regular space
         if (/^\s$/.test(nfc) || nfc === '\u00A0' || nfc === '\u3000') return ' ';
         // Unify curly/smart quotes and apostrophes to ASCII equivalents
@@ -87,22 +90,19 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         return nfc;
     }, []);
 
-    // Fire confetti when: char count matches AND no wrong chars visible
+    // Fire confetti when: char count matches AND no VISIBLY wrong chars
+    // "Visibly wrong" = non-space positions where typed ≠ expected
+    // Space positions are ignored because mismatches there are nearly invisible to the user
     useEffect(() => {
         if (completed || completedFired.current) return;
         const chars = stringToChars(typed);
         if (chars.length < fullTextChars.length) return;
-        // No wrong chars = every typed char matches (after normalization)
-        // Be lenient on space positions: if expected char is space, any whitespace counts as correct
-        const hasWrong = chars.slice(0, fullTextChars.length).some((c, i) => {
-            const nc = normalizeChar(c);
-            const nf = normalizeChar(fullTextChars[i]);
-            if (nc === nf) return false;
-            // If expected is space, treat any whitespace-like input as correct
-            if (nf === ' ' && /^\s$/.test(c)) return false;
-            return true;
+        const hasVisibleWrong = chars.slice(0, fullTextChars.length).some((c, i) => {
+            // Skip space positions entirely — mismatches at spaces are invisible
+            if (normalizeChar(fullTextChars[i]) === ' ') return false;
+            return normalizeChar(c) !== normalizeChar(fullTextChars[i]);
         });
-        if (!hasWrong) {
+        if (!hasVisibleWrong) {
             completedFired.current = true;
             setCompleted(true);
             fireConfetti();
