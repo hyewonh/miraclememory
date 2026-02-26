@@ -93,9 +93,15 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         const chars = stringToChars(typed);
         if (chars.length < fullTextChars.length) return;
         // No wrong chars = every typed char matches (after normalization)
-        const hasWrong = chars.slice(0, fullTextChars.length).some(
-            (c, i) => normalizeChar(c) !== normalizeChar(fullTextChars[i])
-        );
+        // Be lenient on space positions: if expected char is space, any whitespace counts as correct
+        const hasWrong = chars.slice(0, fullTextChars.length).some((c, i) => {
+            const nc = normalizeChar(c);
+            const nf = normalizeChar(fullTextChars[i]);
+            if (nc === nf) return false;
+            // If expected is space, treat any whitespace-like input as correct
+            if (nf === ' ' && /^\s$/.test(c)) return false;
+            return true;
+        });
         if (!hasWrong) {
             completedFired.current = true;
             setCompleted(true);
