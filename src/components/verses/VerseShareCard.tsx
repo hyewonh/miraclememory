@@ -129,7 +129,7 @@ export const VerseShareCard = forwardRef<HTMLDivElement, VerseShareCardProps>(
                                     fontWeight: 500,
                                     color: '#292524'
                                 }}>
-                                    {UI_TEXT.detail.memorizedBy[language]} {userName}
+                                    memorized by {userName}
                                 </div>
                             )}
                             <div style={{
