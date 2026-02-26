@@ -24,7 +24,6 @@ export default function AdminLoginPage() {
             const provider = new GoogleAuthProvider();
             provider.setCustomParameters({ prompt: 'select_account' });
             const result = await signInWithPopup(auth, provider);
-            console.log("Logged in:", result.user.email);
             // Redirection is handled by the useEffect
         } catch (error: any) {
             console.error("Login failed detailed error:", error);

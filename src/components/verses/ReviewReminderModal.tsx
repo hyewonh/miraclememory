@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ReviewItem } from "@/hooks/useReviewReminder";
 import { useLanguage } from "@/context/LanguageContext";
+import { UI_TEXT } from "@/data/translations";
 
 interface Props {
     items: ReviewItem[];
@@ -10,28 +11,15 @@ interface Props {
     onDismissAll: () => void;
 }
 
-const intervalLabel: Record<1 | 3 | 7, { en: string; ko: string }> = {
-    1: { en: "1-day review", ko: "1일 복습" },
-    3: { en: "3-day review", ko: "3일 복습" },
-    7: { en: "7-day review", ko: "7일 복습" },
-};
-
-const TEXTS = {
-    title: { en: "📖 Time to Review!", ko: "📖 복습할 시간이에요!" },
-    subtitle: {
-        en: "Reviewing verses at the right interval locks them into long-term memory.",
-        ko: "정해진 주기에 맞춰 복습하면 장기 기억에 저장돼요.",
-    },
-    reviewNow: { en: "Practice Again", ko: "다시 연습하기" },
-    skipAll: { en: "Maybe later", ko: "나중에 할게요" },
-    skip: { en: "Skip", ko: "건너뛰기" },
-    badge: { en: "Review", ko: "복습" },
+const intervalKey: Record<1 | 3 | 7, "interval1" | "interval3" | "interval7"> = {
+    1: "interval1",
+    3: "interval3",
+    7: "interval7",
 };
 
 export function ReviewReminderModal({ items, onDismiss, onDismissAll }: Props) {
     const router = useRouter();
     const { language } = useLanguage();
-    const lang = language === "ko" ? "ko" : "en";
 
     if (items.length === 0) return null;
 
@@ -52,8 +40,8 @@ export function ReviewReminderModal({ items, onDismiss, onDismissAll }: Props) {
             <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
                 {/* Header gradient */}
                 <div className="bg-gradient-to-r from-amber-500 to-rose-500 px-6 py-5 text-white">
-                    <h2 className="text-xl font-bold">{TEXTS.title[lang]}</h2>
-                    <p className="text-sm text-white/80 mt-1">{TEXTS.subtitle[lang]}</p>
+                    <h2 className="text-xl font-bold">{UI_TEXT.review.title[language]}</h2>
+                    <p className="text-sm text-white/80 mt-1">{UI_TEXT.review.subtitle[language]}</p>
                 </div>
 
                 {/* Items */}
@@ -72,7 +60,7 @@ export function ReviewReminderModal({ items, onDismiss, onDismissAll }: Props) {
                             {/* Verse info */}
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold text-stone-400 uppercase tracking-wide">
-                                    {intervalLabel[item.reviewInterval][lang]} · {item.series.title[language]}
+                                    {UI_TEXT.review[intervalKey[item.reviewInterval]][language]} · {item.series.title[language]}
                                 </p>
                                 <p className="text-sm font-semibold text-stone-800 truncate">
                                     {item.verse.reference[language]}
@@ -88,13 +76,13 @@ export function ReviewReminderModal({ items, onDismiss, onDismissAll }: Props) {
                                     onClick={() => handleReview(item)}
                                     className="text-xs font-bold bg-stone-900 text-white px-3 py-1.5 rounded-full hover:bg-stone-700 transition-colors whitespace-nowrap"
                                 >
-                                    {TEXTS.reviewNow[lang]}
+                                    {UI_TEXT.review.reviewNow[language]}
                                 </button>
                                 <button
                                     onClick={() => onDismiss(item.verse.id)}
                                     className="text-xs text-stone-400 hover:text-stone-600 text-center transition-colors"
                                 >
-                                    {TEXTS.skip[lang]}
+                                    {UI_TEXT.review.skip[language]}
                                 </button>
                             </div>
                         </div>
@@ -107,7 +95,7 @@ export function ReviewReminderModal({ items, onDismiss, onDismissAll }: Props) {
                         onClick={onDismissAll}
                         className="w-full text-sm text-stone-400 hover:text-stone-600 font-medium transition-colors"
                     >
-                        {TEXTS.skipAll[lang]}
+                        {UI_TEXT.review.skipAll[language]}
                     </button>
                 </div>
             </div>

@@ -51,7 +51,6 @@ export async function POST(request: Request) {
             const subData = await statusResponse.json();
             // If already cancelled/expired on PayPal side, treat as success
             if (subData.status === 'CANCELLED' || subData.status === 'EXPIRED') {
-                console.log(`Subscription ${subscriptionId} is already ${subData.status} on PayPal — treating as success.`);
                 return NextResponse.json({ success: true, alreadyCancelled: true });
             }
         }

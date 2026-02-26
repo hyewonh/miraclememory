@@ -5,23 +5,10 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/context/LanguageContext";
 import { useReviewReminder } from "@/hooks/useReviewReminder";
 import { INITIAL_SERIES, VERSES } from "@/data/seedData";
+import { UI_TEXT } from "@/data/translations";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ReviewReminderModal } from "@/components/verses/ReviewReminderModal";
-
-const TEXTS = {
-    continueWhere: { en: "Continue where you left off", ko: "이어서 외우기" },
-    resumeLearning: { en: "▶  Resume Learning", ko: "▶  이어서 학습하기" },
-    browseSeries: { en: "Browse Series", ko: "시리즈 보기" },
-    startPrompt: {
-        en: "Start memorizing scripture — one verse at a time.",
-        ko: "오늘부터 한 구절씩 말씀을 외워보세요.",
-    },
-    todayVerse: { en: "Today's Verse", ko: "오늘의 말씀" },
-    streak: { en: "Day Streak", ko: "연속 학습" },
-    verses: { en: "Verses", ko: "구절" },
-    reviewDue: { en: "Review Due", ko: "복습 대기" },
-};
 
 
 /** Pick a "daily" verse from VERSES using the day-of-year as seed */
@@ -41,8 +28,6 @@ export function UserDashboard() {
     const router = useRouter();
     const { reviewItems, dismiss, dismissAll } = useReviewReminder();
     const [showReviewModal, setShowReviewModal] = useState(false);
-
-    const lang = language === "ko" ? "ko" : "en";
 
     const stats = useMemo(() => {
         let totalVerses = 0;
@@ -101,7 +86,7 @@ export function UserDashboard() {
                                     <span className="text-2xl">🔥</span>
                                     <div>
                                         <div className="text-xl font-black text-amber-500 leading-none">{stats.streak}</div>
-                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.streak[lang]}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{UI_TEXT.dashboard.streak[language]}</div>
                                     </div>
                                 </div>
 
@@ -110,7 +95,7 @@ export function UserDashboard() {
                                     <span className="text-2xl">📖</span>
                                     <div>
                                         <div className="text-xl font-black text-emerald-500 leading-none">{stats.totalVerses}</div>
-                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{TEXTS.verses[lang]}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-stone-400 font-bold">{UI_TEXT.dashboard.verses[language]}</div>
                                     </div>
                                 </div>
                             </div>
@@ -124,7 +109,7 @@ export function UserDashboard() {
                                     <span className="text-2xl">⏰</span>
                                     <div>
                                         <div className="text-xl font-black text-amber-600 leading-none">{reviewItems.length}</div>
-                                        <div className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">{TEXTS.reviewDue[lang]}</div>
+                                        <div className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">{UI_TEXT.dashboard.reviewDue[language]}</div>
                                     </div>
                                 </button>
                             )}
@@ -135,7 +120,7 @@ export function UserDashboard() {
                             {stats.lastSeries ? (
                                 <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm md:bg-transparent md:border-0 md:shadow-none md:p-0 w-full">
                                     <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-2">
-                                        {TEXTS.continueWhere[lang]}
+                                        {UI_TEXT.dashboard.continueWhere[language]}
                                     </p>
                                     <div className="flex items-center justify-between gap-3 w-full">
                                         <h3 className="text-base md:text-lg font-bold text-stone-800 truncate min-w-0">
@@ -145,31 +130,31 @@ export function UserDashboard() {
                                             onClick={() => router.push(`/series/${stats.lastSeriesId}`)}
                                             className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-5 py-2 rounded-full transition-all hover:scale-105 shadow-md text-xs whitespace-nowrap flex-shrink-0"
                                         >
-                                            {TEXTS.resumeLearning[lang]}
+                                            {UI_TEXT.dashboard.resumeLearning[language]}
                                         </button>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm md:bg-transparent md:border-0 md:shadow-none md:p-0 w-full">
                                     <p className="text-stone-400 text-xs uppercase tracking-widest font-bold mb-2">
-                                        {lang === "ko" ? "첫 단계를 시작하세요" : "Begin your journey"}
+                                        {UI_TEXT.dashboard.beginJourney[language]}
                                     </p>
                                     <div className="flex items-center justify-between gap-3 w-full">
                                         <h3 className="text-base md:text-lg font-bold text-stone-800 truncate min-w-0">
-                                            {lang === "ko" ? "시리즈를 선택하세요" : "Pick a Series"}
+                                            {UI_TEXT.dashboard.pickSeries[language]}
                                         </h3>
                                         <button
                                             onClick={() => document.getElementById("series")?.scrollIntoView({ behavior: "smooth" })}
                                             className="inline-flex items-center gap-2 bg-stone-900 hover:bg-stone-700 text-white font-bold px-5 py-2 rounded-full transition-all hover:scale-105 shadow-md text-xs whitespace-nowrap flex-shrink-0"
                                         >
-                                            {lang === "ko" ? "시리즈 보기" : "Browse Series"}
+                                            {UI_TEXT.dashboard.browseSeries[language]}
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                             </svg>
                                         </button>
                                     </div>
                                     <p className="text-xs text-stone-500 hidden md:block mt-1">
-                                        {lang === "ko" ? "한 구절씩, 말씨를 외워보세요." : "Memorize scripture one verse at a time."}
+                                        {UI_TEXT.dashboard.startPrompt[language]}
                                     </p>
                                 </div>
                             )}
@@ -181,7 +166,7 @@ export function UserDashboard() {
                                 <div className="flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse" />
                                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                                        {TEXTS.todayVerse[lang]}
+                                        {UI_TEXT.dashboard.todayVerse[language]}
                                     </span>
                                 </div>
                                 <p className="text-xs font-semibold text-stone-700 font-serif italic">
@@ -194,7 +179,7 @@ export function UserDashboard() {
                                     onClick={() => router.push(`/series/${dailyVerse.seriesId}`)}
                                     className="w-full text-center text-[11px] font-bold text-white bg-stone-800 hover:bg-stone-700 rounded-xl py-2 transition-all mt-auto"
                                 >
-                                    {lang === "ko" ? "이 구절 외우기 →" : "Memorize this verse →"}
+                                    {UI_TEXT.dashboard.memorizeVerse[language]}
                                 </button>
                             </div>
                         )}

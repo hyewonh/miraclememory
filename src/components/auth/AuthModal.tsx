@@ -37,7 +37,6 @@ export function AuthModal({ isOpen, onClose, onSwitchToOnboarding }: AuthModalPr
             // But for the specific bug: "Processing..." -> Success.
         }
         if (user && isOpen) {
-            console.log("AuthModal: User detected, closing modal.");
             onClose();
         }
     }, [user, isOpen, onClose]);

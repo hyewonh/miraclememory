@@ -93,7 +93,7 @@ export default function SeriesPage() {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
-                    <span className="text-sm font-medium hidden sm:inline">Back</span>
+                    <span className="text-sm font-medium hidden sm:inline">{UI_TEXT.detail.backBtn[language]}</span>
                 </button>
 
                 <span className="text-stone-300 hidden sm:inline">|</span>
@@ -147,7 +147,7 @@ export default function SeriesPage() {
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                                             </svg>
-                                            Previous
+                                            {UI_TEXT.detail.previous[language]}
                                         </button>
                                         <span className="text-xs font-semibold text-stone-400 uppercase tracking-widest">
                                             {activeIndex + 1} / {totalVerses}
@@ -165,7 +165,7 @@ export default function SeriesPage() {
                                             disabled={activeIndex === verses.length - 1}
                                             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                         >
-                                            Next
+                                            {UI_TEXT.detail.next[language]}
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                             </svg>
@@ -174,14 +174,14 @@ export default function SeriesPage() {
                                 </>
                             ) : (
                                 <div className="flex items-center justify-center h-48 text-stone-400">
-                                    Select a verse to begin
+                                    {UI_TEXT.detail.selectVerse[language]}
                                 </div>
                             )}
 
                             {/* Mobile: Inline verse list below the card */}
                             <div className="md:hidden mt-8">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3">
-                                    Memory Queue · {totalVerses} verses
+                                    {UI_TEXT.detail.memoryQueue[language]} · {totalVerses} {UI_TEXT.detail.verses[language]}
                                 </p>
                                 <div className="flex flex-col divide-y divide-stone-100 rounded-2xl bg-white shadow-sm overflow-hidden border border-stone-100">
                                     {verses.map((verse, idx) => {
@@ -241,7 +241,7 @@ export default function SeriesPage() {
                         <div className="hidden md:flex flex-col w-72 lg:w-80 flex-shrink-0 bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden sticky top-4 max-h-[calc(100vh-120px)]">
                             <div className="px-4 py-3 border-b border-stone-50 flex-shrink-0">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
-                                    Memory Queue · {totalVerses} verses
+                                    {UI_TEXT.detail.memoryQueue[language]} · {totalVerses} {UI_TEXT.detail.verses[language]}
                                 </p>
                             </div>
                             <div className="flex-1 overflow-y-auto">

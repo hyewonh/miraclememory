@@ -115,7 +115,7 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
         const isDeleting = newTypedChars.length < prevLen;
 
         if (!isDeleting) {
-            // Auto-fill following spaces/punctuation if last char matches
+            // Auto-fill following punctuation if last char matches
             const lastIdx = newTypedChars.length - 1;
             if (lastIdx < fullTextChars.length &&
                 newTypedChars[lastIdx].normalize('NFC') === fullTextChars[lastIdx]) {
@@ -124,10 +124,22 @@ export function InlineTypeTest({ text, language, onClose, onComplete }: InlineTy
                     newTyped += fullTextChars[newTypedChars.length];
                     newTypedChars = stringToChars(newTyped);
                 }
+                // After auto-filling punctuation, also auto-fill ONE trailing space
+                // (e.g. after ", " the space is natural and should not require manual input)
+                if (newTypedChars.length < fullTextChars.length &&
+                    fullTextChars[newTypedChars.length] === ' ' &&
+                    newTypedChars.length > 0 &&
+                    isAutoFillChar(fullTextChars[newTypedChars.length - 1])) {
+                    newTyped += ' ';
+                    newTypedChars = stringToChars(newTyped);
+                }
             }
         } else {
-            // Backspace: strip trailing auto-fill chars
-            while (newTypedChars.length > 0 && isAutoFillChar(newTypedChars[newTypedChars.length - 1])) {
+            // Backspace: strip trailing auto-fill chars AND trailing space after punctuation
+            while (newTypedChars.length > 0 && (
+                isAutoFillChar(newTypedChars[newTypedChars.length - 1]) ||
+                (newTypedChars[newTypedChars.length - 1] === ' ' && newTypedChars.length >= 2 && isAutoFillChar(newTypedChars[newTypedChars.length - 2]))
+            )) {
                 newTyped = newTyped.slice(0, -newTypedChars[newTypedChars.length - 1].length);
                 newTypedChars = stringToChars(newTyped);
             }

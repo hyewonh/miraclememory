@@ -139,6 +139,8 @@ export const UI_TEXT = {
             fr: "Les miracles se produisent dans votre vie."
         },
         cta: { en: "Start 7-Day Free Trial", ko: "7일 무료 체험 시작", zh: "开始7天免费试用", es: "Prueba gratis de 7 días", de: "Kostenlose 7-Tage-Testversion", fr: "Essai gratuit de 7 jours" },
+        continueJourney: { en: "Continue Journey", ko: "이어서 암송하기", zh: "继续背诵之旅", es: "Continuar Viaje", de: "Reise fortsetzen", fr: "Continuer le voyage" },
+        supportMinistry: { en: "Support the Ministry", ko: "후원하기", zh: "支持事工", es: "Apoyar el Ministerio", de: "Ministerium unterstützen", fr: "Soutenir le Ministère" },
     },
     series: {
         title: { en: "Scripture Series", ko: "성경 암송 시리즈", zh: "圣经背诵系列", es: "Series de Escrituras", de: "Schriftstellen-Serien", fr: "Séries d'Écritures" },
@@ -159,12 +161,18 @@ export const UI_TEXT = {
     },
     detail: {
         back: { en: "Go Home", ko: "홈으로 가기", zh: "回首页", es: "Ir a Inicio", de: "Zur Startseite", fr: "Retour à l'accueil" },
+        backBtn: { en: "Back", ko: "뒤로", zh: "返回", es: "Volver", de: "Zurück", fr: "Retour" },
         progress: { en: "Progress", ko: "진행상황", zh: "进度", es: "Progreso", de: "Fortschritt", fr: "Progrès" },
         completed: { en: "Series Completed! Keep reviewing!", ko: "시리즈 완료! 계속 복습하세요!", zh: "系列完成！继续复习！", es: "¡Serie completada! ¡Sigue repasando!", de: "Serie abgeschlossen! Weiterlesen!", fr: "Série terminée ! Continuez à réviser !" },
         schedule: { en: "Curriculum Schedule", ko: "커리큘럼 일정", zh: "课程安排", es: "Horario del plan de estudios", de: "Lehrplanstruktur", fr: "Calendrier du programme" },
         verses: { en: "Verses", ko: "구절", zh: "节", es: "Versículos", de: "Verse", fr: "Versets" },
         memorized: { en: "Memorized", ko: "암송완료", zh: "已背诵", es: "Memorizado", de: "Auswendig", fr: "Mémorisé" },
         start: { en: "Start Memorizing", ko: "암송 시작하기", zh: "开始背诵", es: "Empezar a memorizar", de: "Auswendiglernen starten", fr: "Commencer à mémoriser" },
+        previous: { en: "Previous", ko: "이전", zh: "上一节", es: "Anterior", de: "Zurück", fr: "Précédent" },
+        next: { en: "Next", ko: "다음", zh: "下一节", es: "Siguiente", de: "Nächste", fr: "Suivant" },
+        memoryQueue: { en: "Memory Queue", ko: "암송 대기열", zh: "背诵队列", es: "Cola de Memorización", de: "Lernliste", fr: "File de Mémorisation" },
+        selectVerse: { en: "Select a verse to begin", ko: "구절을 선택하세요", zh: "选择经文开始", es: "Selecciona un versículo", de: "Vers auswählen", fr: "Sélectionner un verset" },
+        memorizedBy: { en: "Memorized by", ko: "암송자", zh: "已背诵者", es: "Memorizado por", de: "Auswendig gelernt von", fr: "Mémorisé par" },
     },
     rewards: {
         title: { en: "Reward Center 🎁", ko: "리워드 센터 🎁", zh: "奖励中心 🎁", es: "Centro de Recompensas 🎁", de: "Belohnungszentrum 🎁", fr: "Centre de Récompenses 🎁" },
@@ -194,6 +202,30 @@ export const UI_TEXT = {
         enterCode: { en: "Enter Code", ko: "코드 입력", zh: "输入码", es: "Ingresar código", de: "Code eingeben", fr: "Entrer le code" },
         enterCodeDesc: { en: "Enter your reward code", ko: "발급받은 보상 코드를 입력하세요", zh: "输入您的奖励码", es: "Ingresa tu código de recompensa", de: "Gib deinen Belohnungscode ein", fr: "Entrez votre code de récompense" },
         apply: { en: "Apply", ko: "적용", zh: "应用", es: "Aplicar", de: "Anwenden", fr: "Appliquer" },
+    },
+    dashboard: {
+        continueWhere: { en: "Continue where you left off", ko: "이어서 외우기", zh: "继续上次的学习", es: "Continúa donde lo dejaste", de: "Dort weitermachen, wo du aufgehört hast", fr: "Reprendre là où vous en étiez" },
+        resumeLearning: { en: "▶  Resume Learning", ko: "▶  이어서 학습하기", zh: "▶  继续学习", es: "▶  Reanudar", de: "▶  Weiterlernen", fr: "▶  Reprendre" },
+        browseSeries: { en: "Browse Series", ko: "시리즈 보기", zh: "浏览系列", es: "Ver Series", de: "Serien durchsuchen", fr: "Parcourir les Séries" },
+        beginJourney: { en: "Begin your journey", ko: "첫 단계를 시작하세요", zh: "开始你的旅程", es: "Comienza tu viaje", de: "Beginne deine Reise", fr: "Commencez votre voyage" },
+        pickSeries: { en: "Pick a Series", ko: "시리즈를 선택하세요", zh: "选择一个系列", es: "Elige una Serie", de: "Wähle eine Serie", fr: "Choisir une Série" },
+        startPrompt: { en: "Memorize scripture one verse at a time.", ko: "한 구절씩, 말씀을 외워보세요.", zh: "一次背诵一节经文。", es: "Memoriza las escrituras un versículo a la vez.", de: "Lerne die Bibel einen Vers nach dem anderen.", fr: "Mémorisez les Écritures un verset à la fois." },
+        todayVerse: { en: "Today's Verse", ko: "오늘의 말씀", zh: "今日经文", es: "Versículo de Hoy", de: "Vers des Tages", fr: "Verset du Jour" },
+        memorizeVerse: { en: "Memorize this verse →", ko: "이 구절 외우기 →", zh: "背诵这节经文 →", es: "Memorizar este versículo →", de: "Diesen Vers lernen →", fr: "Mémoriser ce verset →" },
+        streak: { en: "Day Streak", ko: "연속 학습", zh: "连续天数", es: "Racha diaria", de: "Tage-Serie", fr: "Série de jours" },
+        verses: { en: "Verses", ko: "구절", zh: "经节", es: "Versículos", de: "Verse", fr: "Versets" },
+        reviewDue: { en: "Review Due", ko: "복습 대기", zh: "待复习", es: "Revisión pendiente", de: "Wiederholung fällig", fr: "Révision en attente" },
+    },
+    review: {
+        title: { en: "📖 Time to Review!", ko: "📖 복습할 시간이에요!", zh: "📖 该复习了！", es: "📖 ¡Hora de repasar!", de: "📖 Zeit zum Wiederholen!", fr: "📖 C'est l'heure de réviser !" },
+        subtitle: { en: "Reviewing verses at the right interval locks them into long-term memory.", ko: "정해진 주기에 맞춰 복습하면 장기 기억에 저장돼요.", zh: "在合适的间隔复习经文，可以巩固长期记忆。", es: "Repasar versículos en el intervalo correcto los fija en la memoria a largo plazo.", de: "Das Wiederholen in den richtigen Abständen verankert Verse im Langzeitgedächtnis.", fr: "Réviser les versets au bon moment les ancre dans la mémoire à long terme." },
+        reviewNow: { en: "Practice Again", ko: "다시 연습하기", zh: "再次练习", es: "Practicar de Nuevo", de: "Erneut üben", fr: "S'exercer à nouveau" },
+        skipAll: { en: "Maybe later", ko: "나중에 할게요", zh: "稍后再说", es: "Quizás luego", de: "Vielleicht später", fr: "Peut-être plus tard" },
+        skip: { en: "Skip", ko: "건너뛰기", zh: "跳过", es: "Omitir", de: "Überspringen", fr: "Passer" },
+        badge: { en: "Review", ko: "복습", zh: "复习", es: "Repaso", de: "Wiederholung", fr: "Révision" },
+        interval1: { en: "1-day review", ko: "1일 복습", zh: "1天复习", es: "Repaso 1 día", de: "1-Tages-Wiederholung", fr: "Révision à 1 jour" },
+        interval3: { en: "3-day review", ko: "3일 복습", zh: "3天复习", es: "Repaso 3 días", de: "3-Tage-Wiederholung", fr: "Révision à 3 jours" },
+        interval7: { en: "7-day review", ko: "7일 복습", zh: "7天复习", es: "Repaso 7 días", de: "7-Tage-Wiederholung", fr: "Révision à 7 jours" },
     },
 } as const;
 

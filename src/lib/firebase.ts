@@ -11,11 +11,6 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:291850558840:web:0469c95d76002e4001bc8d",
 };
 
-// Log the actual config being used
-if (typeof window !== "undefined") {
-    console.log("🔥 Firebase Config Dump:", JSON.stringify(firebaseConfig, null, 2));
-}
-
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
@@ -23,11 +18,7 @@ const auth = getAuth(app);
 // Explicitly set persistence to local to avoid issues
 import { setPersistence, browserLocalPersistence } from "firebase/auth";
 setPersistence(auth, browserLocalPersistence)
-    .then(() => console.log("💾 Firebase Auth Persistence set to LOCAL"))
-    .catch((err) => console.error("❌ Error setting auth persistence:", err));
-
-console.log("🔥 Auth Domain:", auth.config.authDomain);
-console.log("🔥 API Key (first 5):", auth.config.apiKey?.substring(0, 5));
+    .catch((err) => console.error("Error setting auth persistence:", err));
 
 import { getStorage } from "firebase/storage";
 

@@ -71,32 +71,25 @@ export function OnboardingModal({ isOpen, onClose, startAtPayment = false }: Onb
 
     // Watch for user auth state changes (fixes Google Sign-in hang issue)
     useEffect(() => {
-        console.log("OnboardingModal Auth Effect Checker:", { user: !!user, uid: user?.uid, step });
         if (user && step === STEPS.AUTH) {
-            console.log("User detected in AUTH step, attempting saveAndAdvance...");
             const saveAndAdvance = async () => {
                 try {
-                    console.log("saveAndAdvance started");
                     setLoading(true);
 
                     // Save survey data in background (don't await to prevent hanging)
-                    console.log("Saving survey data to Firestore (background)...");
                     setDoc(doc(db, "users", user.uid), {
                         survey: surveyData,
                         createdAt: new Date(),
                         isPremium: false
                     }, { merge: true })
-                        .then(() => console.log("Survey data saved successfully in background"))
                         .catch((e) => console.error("Error saving profile in background:", e));
 
-                    console.log("Advancing to PAYMENT immediately.");
                     setStep(STEPS.PAYMENT);
                 } catch (e: any) {
                     console.error("Error in saveAndAdvance:", e);
                     setAuthError(e.message || "Something went wrong");
                 } finally {
                     setLoading(false);
-                    console.log("saveAndAdvance finished, loading set to false");
                 }
             };
             saveAndAdvance();

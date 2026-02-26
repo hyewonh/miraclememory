@@ -2,6 +2,7 @@
 import { Verse } from "@/types";
 import { cn } from "@/lib/utils";
 import { forwardRef } from "react";
+import { UI_TEXT } from "@/data/translations";
 
 interface VerseShareCardProps {
     verse: Verse;
@@ -128,7 +129,7 @@ export const VerseShareCard = forwardRef<HTMLDivElement, VerseShareCardProps>(
                                     fontWeight: 500,
                                     color: '#292524'
                                 }}>
-                                    Memorized by {userName}
+                                    {UI_TEXT.detail.memorizedBy[language]} {userName}
                                 </div>
                             )}
                             <div style={{

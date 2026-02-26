@@ -66,3 +66,5 @@ Web-First: Do not propose mobile-app specific features (like Push Notifications)
 Biblical Integrity: Ensure the platform's content structure supports sound theology.
 
 English UI: The interface must be in English for global scalability.
+
+Deployment Protocol: **Never** deploy, publish, or push code/assets to a production environment without explicitly asking the user for permission and receiving confirmation first.

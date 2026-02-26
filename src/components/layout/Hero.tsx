@@ -52,7 +52,7 @@ export function Hero({ onStartTrial, language = 'en' }: HeroProps) {
                             href="#series"
                             className="block w-full py-5 bg-stone-800 text-white hover:bg-stone-700 rounded-full font-bold text-xl shadow-xl transition-all"
                         >
-                            Continue Journey
+                            {t.continueJourney[language]}
                         </Link>
                     )}
                 </div>
@@ -60,7 +60,7 @@ export function Hero({ onStartTrial, language = 'en' }: HeroProps) {
                 {/* Secondary Actions */}
                 <div className="pt-4">
                     <Link href="#pricing" className="text-stone-400 hover:text-stone-600 text-sm font-medium transition-colors">
-                        Support the Ministry
+                        {t.supportMinistry[language]}
                     </Link>
                 </div>
             </div>

@@ -34,13 +34,10 @@ export function useProgress(seriesId: string) {
 
         const docRef = doc(db, "users", user.uid, "series_progress", seriesId);
 
-        // Real-time listener
-        console.log(`📡 Setting up progress listener for user: ${user.uid}, series: ${seriesId}`);
         const unsubscribe = onSnapshot(docRef, (docSnap) => {
-            console.log(`📥 Progress snapshot received for ${seriesId}. Exists: ${docSnap.exists()}`);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                console.log("📄 Snapshot Data:", data);
+
 
                 // Handle legacy data structure migration
                 let completedVerses = data.completedVerses || {};
@@ -65,7 +62,7 @@ export function useProgress(seriesId: string) {
                     lastUpdated: data.lastUpdated || Date.now()
                 });
             } else {
-                console.log("✨ No progress doc found, initializing empty.");
+
                 setProgress({
                     completedVerses: { en: [], ko: [], zh: [], es: [], de: [], fr: [] },
                     isCompleted: false,
@@ -81,7 +78,7 @@ export function useProgress(seriesId: string) {
     const toggleVerseMemorized = async (verseId: string) => {
         if (!user || !progress) return;
 
-        console.log(`✏️ Toggling verse ${verseId} for language ${language}`);
+
         const currentLangVerses = progress.completedVerses[language] || [];
         const isMemorized = currentLangVerses.includes(verseId);
 
@@ -110,12 +107,12 @@ export function useProgress(seriesId: string) {
             const seriesRef = doc(db, "users", user.uid, "series_progress", seriesId);
             const userRef = doc(db, "users", user.uid);
 
-            console.log(`💾 Saving progress to Firestore key: ${seriesId}`);
+
 
             // Allow concurrent writes, but we can just use independent awaits for simplicity here 
             // since they are different parts of the system.
             await setDoc(seriesRef, newProgress, { merge: true });
-            console.log("✅ Progress saved successfully!");
+
 
             // Update Streak logic ONLY if we are ADDING a verse (memorizing)
             if (!isMemorized) {
@@ -183,7 +180,7 @@ export function useProgress(seriesId: string) {
                                 lastPracticeDate: new Date() // Store as full date-time or just date? 
                                 // Providing a Date object to Firestore SDK converts it to Timestamp automatically.
                             }, { merge: true });
-                            console.log(`🔥 Streak updated to ${newStreak}`);
+
                         }
                     }
                 } catch (streakErr) {

@@ -61,7 +61,6 @@ export function PayPalSubscription({ planId, onSuccess }: PayPalSubscriptionProp
                         });
                     }}
                     onApprove={async (data, actions) => {
-                        console.log("Subscription approved:", data);
                         if (data.subscriptionID) {
                             await updateDoc(doc(db, "users", user.uid), {
                                 isPremium: true,

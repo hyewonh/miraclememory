@@ -60,7 +60,6 @@ export function Pricing() {
                                             });
                                         }}
                                         onApprove={async (data, actions) => {
-                                            console.log("Subscription completed:", data);
                                             setSubscribed(true);
                                             alert("Thank you for your donation! Your trial has started.");
                                         }}
