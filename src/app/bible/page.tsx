@@ -7,6 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useLanguage } from "@/context/LanguageContext";
 import { useBibleIndex, useBibleBook } from "@/hooks/useBible";
 import { useCustomSeries } from "@/hooks/useCustomSeries";
+import { useEsvChapter } from "@/hooks/useEsvChapter";
 import { BookIndex, BOOK_NAMES_KO } from "@/types/bible";
 import { Navbar } from "@/components/layout/Navbar";
 import { CustomVerseRef } from "@/hooks/useCustomSeries";
@@ -156,6 +157,17 @@ export default function BiblePage() {
 
     const selectedBookMeta = books.find(b => b.id === selectedBook);
 
+    // English uses live ESV (per-chapter, cached); other languages use static JSON.
+    const isEnglish = language === "en";
+    const { verses: esvVerses, loading: esvLoading, source: esvSource } =
+        useEsvChapter(selectedBook, selectedChapter, selectedBookMeta?.nameEn, isEnglish);
+
+    // Verse map to render in the current chapter, resolved by language.
+    const chapterVerses: Record<string, string> | null = isEnglish
+        ? esvVerses
+        : (selectedChapter && bookData ? bookData.chapters[String(selectedChapter)] ?? null : null);
+    const versesLoading = isEnglish ? esvLoading : bookLoading;
+
     const handleBookSelect = (bookId: string) => {
         setSelectedBook(bookId);
         setSelectedChapter(null);
@@ -260,9 +272,18 @@ export default function BiblePage() {
                 onClear={() => setSelectedVerses([])}
             />
 
+            {/* ESV fallback notice — shown only when live ESV is unavailable */}
+            {isEnglish && esvSource === "fallback" && (
+                <div className="mx-4 mt-3 mb-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-500 text-[11px] text-center">
+                    ESV를 불러올 수 없어 오프라인 텍스트를 표시합니다
+                </div>
+            )}
+
             <div className="p-4 space-y-1">
-                {selectedChapter && bookData ? (
-                    Object.entries(bookData.chapters[String(selectedChapter)] || {}).map(([vNum, text]) => {
+                {selectedChapter && versesLoading && !chapterVerses ? (
+                    <div className="h-40 flex items-center justify-center text-stone-300 text-sm">loading...</div>
+                ) : selectedChapter && chapterVerses ? (
+                    Object.entries(chapterVerses).map(([vNum, text]) => {
                         const id = `${selectedBook}-${selectedChapter}-${vNum}`;
                         const isSel = selectedVerses.some(v => v.id === id);
                         return (

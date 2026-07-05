@@ -66,3 +66,60 @@ export async function cacheVerse(
         // Silently fail — cache is optional
     }
 }
+
+// ------------------------------------------------------------------
+// Chapter-level cache — stores a whole chapter's verse map in one entry.
+// Used by the ESV browse grid so each chapter hits the API at most once
+// per device per TTL window. Shares the same store/TTL as the verse cache.
+// ------------------------------------------------------------------
+interface CachedChapter {
+    verses: Record<string, string>;
+    cachedAt: number;
+}
+
+function chapterKey(bookId: string, chapter: number, language: string) {
+    return `${language}::ch::${bookId}_${chapter}`;
+}
+
+export async function getCachedChapter(
+    bookId: string,
+    chapter: number,
+    language: string
+): Promise<Record<string, string> | null> {
+    try {
+        const db = await openDB();
+        const key = chapterKey(bookId, chapter, language);
+        const result = await new Promise<CachedChapter | undefined>((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, "readonly");
+            const req = tx.objectStore(STORE_NAME).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+
+        if (!result) return null;
+        if (Date.now() - result.cachedAt > TTL_MS) return null; // Expired
+        return result.verses;
+    } catch {
+        return null;
+    }
+}
+
+export async function cacheChapter(
+    bookId: string,
+    chapter: number,
+    language: string,
+    verses: Record<string, string>
+): Promise<void> {
+    try {
+        const db = await openDB();
+        const key = chapterKey(bookId, chapter, language);
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, "readwrite");
+            const req = tx.objectStore(STORE_NAME).put({ verses, cachedAt: Date.now() }, key);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    } catch {
+        // Silently fail — cache is optional
+    }
+}
