@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 
 type MobileStep = "books" | "chapters" | "verses";
 
-const MIN_VERSES = 5;
+const MIN_VERSES = 1;
 const GOAL_VERSES = 30;
 
 // ─── Book names per language ─────────────────────────────────────
@@ -55,11 +55,17 @@ function VerseProgressBar({
     count,
     onSave,
     onClear,
+    lang,
+    isEditMode,
 }: {
     count: number;
     onSave: () => void;
     onClear: () => void;
+    lang: string;
+    isEditMode: boolean;
 }) {
+    const t = UI_TEXT.bible;
+    const tl = (o: Record<string, string>) => o[lang] ?? o.en;
     const pct = Math.min((count / GOAL_VERSES) * 100, 100);
     const canSave = count >= MIN_VERSES;
     const isGoalReached = count >= GOAL_VERSES;
@@ -79,14 +85,14 @@ function VerseProgressBar({
                     "text-sm font-bold",
                     isGoalReached ? "text-emerald-700" : "text-amber-700"
                 )}>
-                    {count}/{GOAL_VERSES} 구절 선택됨
+                    {count}/{GOAL_VERSES} {tl(t.verseSelected)}
                 </span>
                 <div className="flex gap-2 items-center">
                     <button
                         onClick={onClear}
                         className="text-xs text-stone-400 hover:text-stone-600 px-2"
                     >
-                        초기화
+                        {tl(t.clearSelection)}
                     </button>
                     <button
                         onClick={onSave}
@@ -100,7 +106,7 @@ function VerseProgressBar({
                                 : "bg-stone-200 text-stone-400 cursor-not-allowed"
                         )}
                     >
-                        내 시리즈로 저장
+                        {isEditMode ? tl(t.updateSeries) : tl(t.saveAsSeries)}
                     </button>
                 </div>
             </div>
@@ -115,7 +121,7 @@ function VerseProgressBar({
                 />
             </div>
             {!canSave && (
-                <p className="text-[10px] text-stone-400 text-right">{MIN_VERSES}구절 이상 선택 시 저장 가능</p>
+                <p className="text-[10px] text-stone-400 text-right">{tl(t.minVersesHint)}</p>
             )}
         </div>
     );
@@ -142,12 +148,32 @@ export default function BiblePage() {
     // --- scroll refs so verse list doesn't jump back to top ---
     const verseListRef = useRef<HTMLDivElement>(null);
 
-    const { createSeries, addVerse } = useCustomSeries();
+    const { series: customSeriesList, createSeries, addVerse, updateSeriesVerses } = useCustomSeries();
     const [selectedVerses, setSelectedVerses] = useState<CustomVerseRef[]>([]);
     const [showSeriesModal, setShowSeriesModal] = useState(false);
     const [newSeriesTitle, setNewSeriesTitle] = useState("");
     const [newSeriesDesc, setNewSeriesDesc] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+
+    // Edit mode: /bible?edit=<seriesId> loads an existing series' verses to edit.
+    const [editId, setEditId] = useState<string | null>(null);
+    const hasPreloaded = useRef(false);
+
+    // Read the ?edit= param on the client (avoids useSearchParams Suspense requirement).
+    useEffect(() => {
+        const id = new URLSearchParams(window.location.search).get("edit");
+        if (id) setEditId(id);
+    }, []);
+
+    // Preload the series' existing verses into the selection once it's available.
+    useEffect(() => {
+        if (!editId || hasPreloaded.current) return;
+        const existing = customSeriesList.find(s => s.id === editId);
+        if (existing) {
+            hasPreloaded.current = true;
+            setSelectedVerses(existing.verses ?? []);
+        }
+    }, [editId, customSeriesList]);
 
     const { data: bookData, loading: bookLoading } = useBibleBook(selectedBook);
 
@@ -215,6 +241,24 @@ export default function BiblePage() {
         }
     };
 
+    // Edit mode: overwrite the existing series' verses directly (no title/desc modal).
+    const handleUpdateSeries = async () => {
+        if (!editId || selectedVerses.length === 0 || isSaving) return;
+        setIsSaving(true);
+        try {
+            await updateSeriesVerses(editId, selectedVerses);
+            router.push("/profile");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Save button: edit mode updates in place; create mode opens the naming modal.
+    const handleSaveClick = () => {
+        if (editId) handleUpdateSeries();
+        else setShowSeriesModal(true);
+    };
+
     // ── Sub-components ──────────────────────────────────────────
     const BookList = () => (
         <div className="flex-1 overflow-y-auto">
@@ -268,14 +312,16 @@ export default function BiblePage() {
             {/* Progress bar — sticky at top of verse panel */}
             <VerseProgressBar
                 count={selectedVerses.length}
-                onSave={() => setShowSeriesModal(true)}
+                onSave={handleSaveClick}
                 onClear={() => setSelectedVerses([])}
+                lang={language}
+                isEditMode={!!editId}
             />
 
             {/* ESV fallback notice — shown only when live ESV is unavailable */}
             {isEnglish && esvSource === "fallback" && (
                 <div className="mx-4 mt-3 mb-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-500 text-[11px] text-center">
-                    ESV를 불러올 수 없어 오프라인 텍스트를 표시합니다
+                    {tl(t.esvFallbackNotice)}
                 </div>
             )}
 
@@ -333,12 +379,12 @@ export default function BiblePage() {
                     )}
                     <div className="flex-1 min-w-0">
                         <h1 className="text-base font-bold text-stone-900 truncate">
-                            {mobileStep === "books" && "내 시리즈 만들기"}
+                            {mobileStep === "books" && (editId ? tl(t.editSeriesTitle) : tl(t.myCollectionTitle))}
                             {mobileStep === "chapters" && selectedBookMeta && getBookName(selectedBookMeta, language)}
                             {mobileStep === "verses" && selectedBookMeta && `${getBookName(selectedBookMeta, language)} ${selectedChapter}${tl(t.chapterLabel)}`}
                         </h1>
                         {mobileStep === "books" && (
-                            <p className="text-xs text-stone-400">구절을 선택해 나만의 시리즈를 만드세요</p>
+                            <p className="text-xs text-stone-400">{editId ? tl(t.editSeriesSubtitle) : tl(t.myCollectionSubtitleShort)}</p>
                         )}
                     </div>
                 </div>
@@ -354,8 +400,8 @@ export default function BiblePage() {
             {/* ═══════════════════ DESKTOP LAYOUT ═══════════════════ */}
             <main className="hidden md:flex flex-col flex-1 max-w-7xl mx-auto w-full px-4 md:px-8 pt-6 pb-10">
                 <div className="mb-5">
-                    <h1 className="text-3xl font-bold text-stone-900">내 시리즈 만들기</h1>
-                    <p className="text-stone-400 mt-1 text-sm">성경 구절을 선택해 나만의 암송 시리즈를 만들어 보세요</p>
+                    <h1 className="text-3xl font-bold text-stone-900">{editId ? tl(t.editSeriesTitle) : tl(t.myCollectionTitle)}</h1>
+                    <p className="text-stone-400 mt-1 text-sm">{editId ? tl(t.editSeriesSubtitle) : tl(t.myCollectionSubtitle)}</p>
                 </div>
                 <div className="flex gap-4 flex-1" style={{ height: "calc(100vh - 230px)" }}>
                     {/* Book list */}
@@ -398,7 +444,7 @@ export default function BiblePage() {
                             <button onClick={() => setShowSeriesModal(false)} className="flex-1 border border-stone-200 text-stone-500 font-bold py-3 rounded-xl hover:bg-stone-50">{tl(t.cancel)}</button>
                             <button onClick={handleCreateSeries} disabled={!newSeriesTitle.trim() || isSaving}
                                 className="flex-1 bg-amber-500 hover:bg-amber-400 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-40 shadow-lg shadow-amber-400/30">
-                                {isSaving ? "저장 중..." : tl(t.create)}
+                                {isSaving ? tl(t.saving) : tl(t.create)}
                             </button>
                         </div>
                     </div>

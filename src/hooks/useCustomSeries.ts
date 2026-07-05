@@ -97,6 +97,23 @@ export function useCustomSeries() {
         });
     }, [user]);
 
+    /** Replace the whole verse list of a series (used by the edit flow). */
+    const updateSeriesVerses = useCallback(async (seriesId: string, verses: CustomVerseRef[]) => {
+        if (!user) return;
+        await updateDoc(doc(db, "users", user.uid, "custom_series", seriesId), {
+            verses,
+            updatedAt: Date.now(),
+        });
+        // Keep a published copy in sync if the series was shared.
+        try {
+            const seriesDoc = await getDoc(doc(db, "users", user.uid, "custom_series", seriesId));
+            const shareId = seriesDoc.data()?.shareId;
+            if (shareId) {
+                await updateDoc(doc(db, "shared_series", shareId), { verses });
+            }
+        } catch { /* ignore */ }
+    }, [user]);
+
     /** Publish series to public shared_series collection. Returns shareId. */
     const publishSeries = useCallback(async (cs: CustomSeries): Promise<string> => {
         if (!user) throw new Error("Not logged in");
@@ -129,5 +146,5 @@ export function useCustomSeries() {
         return ref.id;
     }, [user]);
 
-    return { series, loading, createSeries, deleteSeries, addVerse, removeVerse, publishSeries, importSharedSeries };
+    return { series, loading, createSeries, deleteSeries, addVerse, removeVerse, updateSeriesVerses, publishSeries, importSharedSeries };
 }
